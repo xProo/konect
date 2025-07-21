@@ -126,8 +126,9 @@ async function handleSignIn() {
       
     
       setTimeout(() => {
-        window.history.pushState({}, undefined, '/web_api/home');
-        window.dispatchEvent(new Event("pushstate"));
+        window.history.pushState({}, '', '/');
+        const popStateEvent = new PopStateEvent('popstate', { state: {} });
+        window.dispatchEvent(popStateEvent);
       }, 1000);
     }
   } catch (err) {

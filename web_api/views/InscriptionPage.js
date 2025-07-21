@@ -228,7 +228,7 @@ async function handleSignUp() {
       
       
       setTimeout(() => {
-        window.history.pushState({}, '', '/web_api/connexion');
+        window.history.pushState({}, '', '/connexion');
         const popStateEvent = new PopStateEvent('popstate', { state: {} });
         window.dispatchEvent(popStateEvent);
       }, 2000);
