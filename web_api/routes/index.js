@@ -8,6 +8,7 @@ import AccueilPage from "../views/AccueilPage.js";
 import HomePage from "../views/HomePage.js";
 import CommunityManagePage from "../views/CommunityManagePage.js";
 import CommunityDashboardPage from "../views/CommunityDashboardPage.js";
+import EventsPage from "../views/EventsPage.js";
 
 export default {
   "/": {
@@ -39,6 +40,9 @@ export default {
   },
   "/community-dashboard": {
     tag: CommunityDashboardPage,
+  },
+  "/events": {
+    tag: EventsPage,
   },
   "*": {
     tag: Page404,

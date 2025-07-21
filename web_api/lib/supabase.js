@@ -248,24 +248,31 @@ export const database = {
 
   // Statistiques d'une communauté
   async getCommunityStats(communityId) {
-    // Nombre de membres
-    const { data: membersCount, error: membersError } = await supabase
-      .from('community_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('community_id', communityId)
+    try {
+      // Nombre de membres
+      const { count: membersCount, error: membersError } = await supabase
+        .from('community_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('community_id', communityId)
 
-    // Nombre d'événements
-    const { data: eventsCount, error: eventsError } = await supabase
-      .from('events')
-      .select('*', { count: 'exact', head: true })
-      .eq('community_id', communityId)
+      // Nombre d'événements
+      const { count: eventsCount, error: eventsError } = await supabase
+        .from('events')
+        .select('*', { count: 'exact', head: true })
+        .eq('community_id', communityId)
 
-    return {
-      data: {
-        members_count: membersCount?.length || 0,
-        events_count: eventsCount?.length || 0
-      },
-      error: membersError || eventsError
+      return {
+        data: {
+          members_count: membersCount || 0,
+          events_count: eventsCount || 0
+        },
+        error: membersError || eventsError
+      }
+    } catch (error) {
+      return {
+        data: { members_count: 0, events_count: 0 },
+        error: error
+      }
     }
   },
 
@@ -276,6 +283,168 @@ export const database = {
       .select('*')
       .eq('community_id', communityId)
       .order('created_at', { ascending: false })
+    return { data, error }
+  },
+
+  // === GESTION DES ÉVÉNEMENTS ===
+
+  // Créer un événement
+  async createEvent(eventData) {
+    // Version simplifiée qui utilise seulement les colonnes de base
+    const { data, error } = await supabase
+      .from('events')
+      .insert([{
+        title: eventData.title,
+        description: eventData.description,
+        date: eventData.date,
+        location: eventData.location,
+        community_id: eventData.community_id
+      }])
+      .select()
+    return { data, error }
+  },
+
+  // Modifier un événement
+  async updateEvent(eventId, updates) {
+    const { data, error } = await supabase
+      .from('events')
+      .update(updates)
+      .eq('id', eventId)
+      .select()
+    return { data, error }
+  },
+
+  // Supprimer un événement
+  async deleteEvent(eventId) {
+    const { data, error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', eventId)
+    return { data, error }
+  },
+
+  // === GESTION DES INSCRIPTIONS ===
+
+  // S'inscrire à un événement
+  async registerToEvent(userId, eventId) {
+    try {
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .insert([{
+          user_id: userId,
+          event_id: eventId,
+          status: 'confirmed',
+          registered_at: new Date().toISOString()
+        }])
+        .select()
+      return { data, error }
+    } catch (error) {
+      return { data: null, error: { message: 'Table event_registrations non disponible. Veuillez exécuter le SQL d\'initialisation.' } }
+    }
+  },
+
+  // Se désinscrire d'un événement
+  async unregisterFromEvent(userId, eventId) {
+    const { data, error } = await supabase
+      .from('event_registrations')
+      .delete()
+      .eq('user_id', userId)
+      .eq('event_id', eventId)
+    return { data, error }
+  },
+
+  // Vérifier si un utilisateur est inscrit à un événement
+  async isRegisteredToEvent(userId, eventId) {
+    try {
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('event_id', eventId)
+        .limit(1)
+      
+      if (error) {
+        // Si la table n'existe pas, retourner false
+        return { data: false, error: null }
+      }
+      
+      return { data: data && data.length > 0, error }
+    } catch (error) {
+      return { data: false, error: null }
+    }
+  },
+
+  // Récupérer les participants d'un événement
+  async getEventParticipants(eventId) {
+    try {
+      // Récupérer d'abord les inscriptions
+      const { data: registrations, error: regError } = await supabase
+        .from('event_registrations')
+        .select('*')
+        .eq('event_id', eventId)
+        .eq('status', 'confirmed')
+      
+      if (regError) {
+        // Si la table n'existe pas encore, retourner une liste vide
+        return { data: [], error: null }
+      }
+      
+      if (!registrations || registrations.length === 0) {
+        return { data: [], error: null }
+      }
+      
+      // Récupérer les profils des participants
+      const userIds = registrations.map(reg => reg.user_id)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', userIds)
+      
+      if (profilesError) return { data: null, error: profilesError }
+      
+      // Combiner les données
+      const participantsWithProfiles = registrations.map(registration => {
+        const profile = profiles?.find(p => p.id === registration.user_id)
+        return {
+          ...registration,
+          user_profiles: profile || {
+            id: registration.user_id,
+            email: 'Email non disponible',
+            prenom: '',
+            nom: '',
+            full_name: 'Utilisateur'
+          }
+        }
+      })
+      
+      return { data: participantsWithProfiles, error: null }
+      
+    } catch (error) {
+      return { data: null, error }
+    }
+  },
+
+  // Récupérer les événements auxquels un utilisateur est inscrit
+  async getUserEvents(userId) {
+    const { data, error } = await supabase
+      .from('event_registrations')
+      .select(`
+        *,
+        events:event_id (
+          id,
+          title,
+          description,
+          date,
+          time,
+          location,
+          is_public,
+          max_participants,
+          price,
+          status
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('status', 'confirmed')
     return { data, error }
   }
 } 

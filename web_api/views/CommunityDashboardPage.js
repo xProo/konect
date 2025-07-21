@@ -158,7 +158,7 @@ export default function CommunityDashboardPage() {
               {
                 tag: "button",
                 attributes: [
-                  ["onclick", "createEvent()"],
+                  ["onclick", "createCommunityEvent()"],
                   ["style", { 
                     padding: "15px", 
                     backgroundColor: "#28a745", 
@@ -424,7 +424,7 @@ async function loadEvents(communityId) {
   }
 }
 
-function displayEvents(events) {
+async function displayEvents(events) {
   const container = document.getElementById('events-list');
   
   if (events.length === 0) {
@@ -437,26 +437,48 @@ function displayEvents(events) {
     return;
   }
 
+  // Récupérer les statistiques de chaque événement
+  const eventsWithStats = await Promise.all(
+    events.map(async (event) => {
+      try {
+        const { data: participants } = await database.getEventParticipants(event.id);
+        return { ...event, participantCount: participants?.length || 0 };
+      } catch (error) {
+        return { ...event, participantCount: 0 };
+      }
+    })
+  );
+
   container.innerHTML = `
     <div style="display: grid; gap: 20px;">
-      ${events.map(event => `
+      ${eventsWithStats.map(event => `
         <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; background: #f9f9f9;">
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-            <div>
-              <h3 style="margin: 0 0 10px 0; color: #333;">${event.title || 'Événement sans titre'}</h3>
-              <p style="margin: 0; color: #666;">📅 ${event.date ? new Date(event.date).toLocaleDateString('fr-FR') : 'Date non définie'}</p>
-              <p style="margin: 5px 0; color: #888;">📍 ${event.location || 'Lieu non défini'}</p>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <h3 style="margin: 0; color: #333;">${event.title || 'Événement sans titre'}</h3>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
+                <p style="margin: 0; color: #666;">📅 ${event.date ? new Date(event.date).toLocaleDateString('fr-FR') : 'Date non définie'}</p>
+                <p style="margin: 0; color: #888;">📍 ${event.location || 'Lieu non défini'}</p>
+                <p style="margin: 0; color: #007bff;">👥 ${event.participantCount} participant${event.participantCount > 1 ? 's' : ''}</p>
+              </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-              <button onclick="editEvent('${event.id}')" style="padding: 8px 15px; background: #ffc107; color: #333; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                ✏️ Modifier
-              </button>
-              <button onclick="deleteEvent('${event.id}')" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                🗑️ Supprimer
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; gap: 10px;">
+                <button onclick="editEvent('${event.id}')" style="padding: 8px 15px; background: #ffc107; color: #333; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                  ✏️ Modifier
+                </button>
+                <button onclick="deleteEvent('${event.id}')" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                  🗑️ Supprimer
+                </button>
+              </div>
+              <button onclick="viewEventParticipants('${event.id}')" style="padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                👥 Voir participants
               </button>
             </div>
           </div>
-          <p style="margin: 0; color: #555;">${event.description || 'Aucune description'}</p>
+          <p style="margin: 0; color: #555; font-style: italic;">${event.description || 'Aucune description'}</p>
         </div>
       `).join('')}
     </div>
@@ -464,8 +486,16 @@ function displayEvents(events) {
 }
 
 // Actions rapides
-function createEvent() {
-  showMessage('Fonctionnalité de création d\'événement à venir...', 'info');
+function createCommunityEvent() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const communityId = urlParams.get('id');
+  
+  if (!communityId) {
+    showMessage('Erreur : ID de communauté manquant', 'error');
+    return;
+  }
+  
+  showEventForm(communityId);
 }
 
 function inviteMembers() {
@@ -480,12 +510,52 @@ function viewPublicPage() {
   showMessage('Fonctionnalité de page publique à venir...', 'info');
 }
 
-function editEvent(eventId) {
-  showMessage('Fonctionnalité d\'édition d\'événement à venir...', 'info');
+async function editEvent(eventId) {
+  try {
+    // Récupérer les détails de l'événement
+    const { data: events, error } = await database.getCommunityEvents(
+      new URLSearchParams(window.location.search).get('id')
+    );
+    
+    if (error) {
+      showMessage(`Erreur lors du chargement de l'événement : ${error.message}`, 'error');
+      return;
+    }
+    
+    const event = events?.find(e => e.id === eventId);
+    if (!event) {
+      showMessage('Événement non trouvé', 'error');
+      return;
+    }
+    
+    showEventForm(event.community_id, event);
+    
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
 }
 
-function deleteEvent(eventId) {
-  showMessage('Fonctionnalité de suppression d\'événement à venir...', 'info');
+async function deleteEvent(eventId) {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')) {
+    return;
+  }
+
+  try {
+    const { error } = await database.deleteEvent(eventId);
+    
+    if (error) {
+      showMessage(`Erreur lors de la suppression : ${error.message}`, 'error');
+    } else {
+      showMessage('Événement supprimé avec succès', 'success');
+      // Recharger la liste des événements
+      const urlParams = new URLSearchParams(window.location.search);
+      const communityId = urlParams.get('id');
+      await loadEvents(communityId);
+      await loadStatistics(communityId);
+    }
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
 }
 
 async function removeMember(userId) {
@@ -536,11 +606,230 @@ function showMessage(message, type) {
   }, 5000);
 }
 
+// === GESTION DES ÉVÉNEMENTS ===
+
+function showEventForm(communityId, eventToEdit = null) {
+  const isEdit = !!eventToEdit;
+  const modalId = 'event-modal';
+  
+  // Supprimer le modal existant s'il y en a un
+  const existingModal = document.getElementById(modalId);
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  const modal = document.createElement('div');
+  modal.id = modalId;
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); display: flex; justify-content: center; 
+    align-items: center; z-index: 1000;
+  `;
+  
+  modal.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+      <h2 style="margin: 0 0 20px 0; color: #333;">
+        ${isEdit ? '✏️ Modifier l\'événement' : '📅 Créer un nouvel événement'}
+      </h2>
+      
+      <form id="event-form">
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Titre *</label>
+          <input type="text" id="event-title" required 
+                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;"
+                 value="${eventToEdit?.title || ''}" placeholder="Nom de l'événement">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Description</label>
+          <textarea id="event-description" rows="3"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; resize: vertical;"
+                    placeholder="Description de l'événement">${eventToEdit?.description || ''}</textarea>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Date *</label>
+          <input type="date" id="event-date" required
+                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;"
+                 value="${eventToEdit?.date ? eventToEdit.date.split('T')[0] : ''}">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Lieu *</label>
+          <input type="text" id="event-location" required
+                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;"
+                 value="${eventToEdit?.location || ''}" placeholder="Adresse ou lieu de l'événement">
+        </div>
+        
+
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" onclick="closeEventModal()" 
+                  style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Annuler
+          </button>
+          <button type="submit"
+                  style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            ${isEdit ? '✏️ Mettre à jour' : '📅 Créer l\'événement'}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Gérer la soumission du formulaire
+  document.getElementById('event-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await handleEventSubmit(communityId, eventToEdit?.id);
+  });
+  
+  // Fermer le modal en cliquant à l'extérieur
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeEventModal();
+    }
+  });
+}
+
+function closeEventModal() {
+  const modal = document.getElementById('event-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+async function handleEventSubmit(communityId, eventId = null) {
+  const isEdit = !!eventId;
+  
+  const eventData = {
+    title: document.getElementById('event-title').value.trim(),
+    description: document.getElementById('event-description').value.trim(),
+    date: document.getElementById('event-date').value,
+    location: document.getElementById('event-location').value.trim(),
+    community_id: communityId
+  };
+  
+  // Validation
+  if (!eventData.title || !eventData.date || !eventData.location) {
+    showMessage('Veuillez remplir tous les champs obligatoires', 'error');
+    return;
+  }
+  
+  try {
+    let result;
+    if (isEdit) {
+      result = await database.updateEvent(eventId, eventData);
+    } else {
+      result = await database.createEvent(eventData);
+    }
+    
+    if (result.error) {
+      showMessage(`Erreur lors de ${isEdit ? 'la modification' : 'la création'} : ${result.error.message}`, 'error');
+    } else {
+      showMessage(`Événement ${isEdit ? 'modifié' : 'créé'} avec succès !`, 'success');
+      closeEventModal();
+      // Recharger les événements
+      await loadEvents(communityId);
+      await loadStatistics(communityId);
+    }
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
+}
+
+async function viewEventParticipants(eventId) {
+  try {
+    const { data: participants, error } = await database.getEventParticipants(eventId);
+    
+    if (error) {
+      showMessage(`Erreur lors du chargement des participants : ${error.message}`, 'error');
+      return;
+    }
+    
+    showParticipantsModal(participants || [], eventId);
+    
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
+}
+
+function showParticipantsModal(participants, eventId) {
+  const modalId = 'participants-modal';
+  
+  // Supprimer le modal existant s'il y en a un
+  const existingModal = document.getElementById(modalId);
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  const modal = document.createElement('div');
+  modal.id = modalId;
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); display: flex; justify-content: center; 
+    align-items: center; z-index: 1000;
+  `;
+  
+  modal.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+      <h2 style="margin: 0 0 20px 0; color: #333;">
+        👥 Participants à l'événement (${participants.length})
+      </h2>
+      
+      ${participants.length === 0 ? `
+        <div style="text-align: center; padding: 40px; color: #666;">
+          <p>Aucun participant pour le moment</p>
+        </div>
+      ` : `
+        <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+          ${participants.map(participant => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+              <div>
+                <strong style="color: #333;">${participant.user_profiles?.full_name || participant.user_profiles?.email || 'Utilisateur'}</strong>
+                <div style="color: #666; font-size: 14px;">${participant.user_profiles?.email || 'Email non disponible'}</div>
+                <div style="color: #888; font-size: 12px;">Inscrit le : ${new Date(participant.registered_at).toLocaleDateString('fr-FR')}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+      
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" onclick="closeParticipantsModal()" 
+                style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+          Fermer
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Fermer le modal en cliquant à l'extérieur
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeParticipantsModal();
+    }
+  });
+}
+
+function closeParticipantsModal() {
+  const modal = document.getElementById('participants-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
 // Rendre les fonctions disponibles globalement
-window.createEvent = createEvent;
+window.createCommunityEvent = createCommunityEvent;
 window.inviteMembers = inviteMembers;
 window.editCommunity = editCommunity;
 window.viewPublicPage = viewPublicPage;
 window.editEvent = editEvent;
 window.deleteEvent = deleteEvent;
-window.removeMember = removeMember; 
+window.removeMember = removeMember;
+window.viewEventParticipants = viewEventParticipants;
+window.closeEventModal = closeEventModal;
+window.closeParticipantsModal = closeParticipantsModal; 
