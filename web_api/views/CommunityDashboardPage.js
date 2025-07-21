@@ -390,7 +390,11 @@ function displayMembers(members) {
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
           <div>
             <strong style="color: #333;">${member.user_profiles?.full_name || member.user_profiles?.email || 'Utilisateur'}</strong>
-            <div style="color: #666; font-size: 14px;">${member.user_profiles?.email}</div>
+            <div style="color: #666; font-size: 14px;">
+              ${member.user_profiles?.email || 'Email non disponible'}
+              ${member.user_profiles?.prenom && member.user_profiles?.nom ? 
+                ` (${member.user_profiles.prenom} ${member.user_profiles.nom})` : ''}
+            </div>
             <div style="color: #888; font-size: 12px;">Membre depuis : ${new Date(member.joined_at).toLocaleDateString('fr-FR')}</div>
           </div>
           <div style="display: flex; gap: 10px;">

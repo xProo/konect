@@ -11,6 +11,25 @@ export const auth = {
 
   async signUp(userData) {
     const { data, error } = await supabase.auth.signUp(userData)
+    
+    // Si l'inscription réussit, créer le profil utilisateur
+    if (!error && data.user) {
+      try {
+        await supabase
+          .from('user_profiles')
+          .insert([{
+            id: data.user.id,
+            email: data.user.email,
+            prenom: userData.options?.data?.prenom || '',
+            nom: userData.options?.data?.nom || '',
+            full_name: userData.options?.data?.full_name || data.user.email
+          }])
+      } catch (profileError) {
+        console.log('Erreur lors de la création du profil:', profileError)
+        // On ne fait pas échouer l'inscription pour autant
+      }
+    }
+    
     return { data, error }
   },
 
@@ -161,20 +180,48 @@ export const database = {
 
   // Récupérer les membres d'une communauté
   async getCommunityMembers(communityId) {
-    const { data, error } = await supabase
-      .from('community_members')
-      .select(`
-        *,
-        user_profiles:user_id (
-          id,
-          email,
-          prenom,
-          nom,
-          full_name
-        )
-      `)
-      .eq('community_id', communityId)
-    return { data, error }
+    try {
+      // Récupérer d'abord les membres
+      const { data: members, error: membersError } = await supabase
+        .from('community_members')
+        .select('*')
+        .eq('community_id', communityId)
+      
+      if (membersError) return { data: null, error: membersError }
+      
+      if (!members || members.length === 0) {
+        return { data: [], error: null }
+      }
+      
+      // Récupérer les profils des utilisateurs
+      const userIds = members.map(member => member.user_id)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', userIds)
+      
+      if (profilesError) return { data: null, error: profilesError }
+      
+      // Combiner les données
+      const membersWithProfiles = members.map(member => {
+        const profile = profiles?.find(p => p.id === member.user_id)
+        return {
+          ...member,
+          user_profiles: profile || {
+            id: member.user_id,
+            email: 'Email non disponible',
+            prenom: '',
+            nom: '',
+            full_name: 'Utilisateur'
+          }
+        }
+      })
+      
+      return { data: membersWithProfiles, error: null }
+      
+    } catch (error) {
+      return { data: null, error }
+    }
   },
 
   // Récupérer les communautés auxquelles un utilisateur appartient
@@ -189,7 +236,8 @@ export const database = {
           description,
           category,
           location,
-          image_url
+          image_url,
+          referent_id
         )
       `)
       .eq('user_id', userId)
