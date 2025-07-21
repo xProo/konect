@@ -447,4 +447,402 @@ export const database = {
       .eq('status', 'confirmed')
     return { data, error }
   }
+}
+
+// === FONCTIONS ADMINISTRATEUR ===
+export const admin = {
+  // Vérifier si l'utilisateur actuel est admin
+  async isAdmin() {
+    try {
+      const { data: { user } } = await auth.getCurrentUser();
+      if (!user) return false;
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      
+      return data?.is_admin || false;
+    } catch (error) {
+      return false;
+    }
+  },
+
+  // Obtenir les statistiques générales
+  async getStats() {
+    try {
+      // Utiliser la vue admin_stats si elle existe, sinon calculer manuellement
+      const { data: viewStats, error: viewError } = await supabase
+        .from('admin_stats')
+        .select('*')
+        .single();
+
+      if (!viewError && viewStats) {
+        return { data: viewStats, error: null };
+      }
+
+      // Si la vue n'existe pas, calculer manuellement
+      const results = await Promise.all([
+        supabase.from('communities').select('*', { count: 'exact', head: true }),
+        supabase.from('events').select('*', { count: 'exact', head: true }),
+        supabase.from('user_profiles').select('*', { count: 'exact', head: true }),
+        // Gérer event_registrations qui peut ne pas exister
+        supabase.from('event_registrations').select('*', { count: 'exact', head: true })
+          .then(result => result)
+          .catch(() => ({ count: 0, error: null }))
+      ]);
+
+      const [
+        { count: totalCommunities },
+        { count: totalEvents },
+        { count: totalUsers },
+        { count: totalRegistrations }
+      ] = results;
+
+      const stats = {
+        total_communities: totalCommunities || 0,
+        total_events: totalEvents || 0,
+        total_users: totalUsers || 0,
+        total_registrations: totalRegistrations || 0
+      };
+
+      return { data: stats, error: null };
+    } catch (error) {
+      // Fallback en cas d'erreur - retourner des stats vides
+      const stats = {
+        total_communities: 0,
+        total_events: 0,
+        total_users: 0,
+        total_registrations: 0
+      };
+      return { data: stats, error: null };
+    }
+  },
+
+  // === GESTION DES UTILISATEURS ===
+  // Obtenir tous les utilisateurs
+  async getAllUsers() {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    return { data, error };
+  },
+
+  // Mettre à jour un utilisateur
+  async updateUser(userId, updates) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select();
+    return { data, error };
+  },
+
+  // Supprimer un utilisateur (désactiver plutôt que supprimer)
+  async deleteUser(userId) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({ is_active: false })
+      .eq('id', userId);
+    return { data, error };
+  },
+
+  // Promouvoir/rétrograder admin
+  async toggleAdminStatus(userId, isAdmin) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({ is_admin: isAdmin })
+      .eq('id', userId)
+      .select();
+    return { data, error };
+  },
+
+  // === GESTION DES COMMUNAUTÉS ===
+  // Obtenir toutes les communautés avec détails
+  async getAllCommunities() {
+    try {
+      // Récupérer d'abord les communautés
+      const { data: communities, error: communitiesError } = await supabase
+        .from('communities')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (communitiesError) return { data: null, error: communitiesError };
+      
+      if (!communities || communities.length === 0) {
+        return { data: [], error: null };
+      }
+      
+      // Récupérer les profils des référents
+      const referentIds = communities.map(c => c.referent_id).filter(Boolean);
+      
+      if (referentIds.length === 0) {
+        return { data: communities.map(c => ({ ...c, user_profiles: null })), error: null };
+      }
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', referentIds);
+      
+      if (profilesError) return { data: null, error: profilesError };
+      
+      // Combiner les données
+      const communitiesWithProfiles = communities.map(community => {
+        const profile = profiles?.find(p => p.id === community.referent_id);
+        return {
+          ...community,
+          user_profiles: profile || null
+        };
+      });
+      
+      return { data: communitiesWithProfiles, error: null };
+      
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // Valider une communauté
+  async validateCommunity(communityId, isValidated) {
+    const { data, error } = await supabase
+      .from('communities')
+      .update({ 
+        is_validated: isValidated,
+        validated_at: isValidated ? new Date().toISOString() : null
+      })
+      .eq('id', communityId)
+      .select();
+    return { data, error };
+  },
+
+  // Supprimer une communauté
+  async deleteCommunityAdmin(communityId) {
+    const { data, error } = await supabase
+      .from('communities')
+      .delete()
+      .eq('id', communityId);
+    return { data, error };
+  },
+
+  // Obtenir les membres d'une communauté
+  async getCommunityMembersAdmin(communityId) {
+    const { data, error } = await supabase
+      .from('community_members')
+      .select(`
+        *,
+        user_profiles (*)
+      `)
+      .eq('community_id', communityId);
+    return { data, error };
+  },
+
+  // === GESTION DES ÉVÉNEMENTS ===
+  // Obtenir tous les événements
+  async getAllEvents() {
+    try {
+      // Récupérer d'abord les événements avec leurs communautés
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select(`
+          *,
+          communities (*)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (eventsError) return { data: null, error: eventsError };
+      
+      if (!events || events.length === 0) {
+        return { data: [], error: null };
+      }
+      
+      // Récupérer les profils des référents des communautés
+      const referentIds = events
+        .map(e => e.communities?.referent_id)
+        .filter(Boolean);
+      
+      if (referentIds.length === 0) {
+        return { data: events, error: null };
+      }
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', referentIds);
+      
+      if (profilesError) return { data: null, error: profilesError };
+      
+      // Combiner les données
+      const eventsWithProfiles = events.map(event => {
+        if (event.communities && event.communities.referent_id) {
+          const profile = profiles?.find(p => p.id === event.communities.referent_id);
+          return {
+            ...event,
+            communities: {
+              ...event.communities,
+              user_profiles: profile || null
+            }
+          };
+        }
+        return event;
+      });
+      
+      return { data: eventsWithProfiles, error: null };
+      
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // Supprimer un événement
+  async deleteEventAdmin(eventId) {
+    const { data, error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', eventId);
+    return { data, error };
+  },
+
+  // Obtenir les participants d'un événement
+  async getEventParticipantsAdmin(eventId) {
+    try {
+      const { data, error } = await supabase
+        .from('event_registrations')
+        .select(`
+          *,
+          user_profiles (*),
+          events (*)
+        `)
+        .eq('event_id', eventId);
+      return { data, error };
+    } catch (error) {
+      return { data: [], error: null };
+    }
+  },
+
+  // Supprimer un participant d'un événement
+  async removeEventParticipant(eventId, userId) {
+    const { data, error } = await supabase
+      .from('event_registrations')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+    return { data, error };
+  },
+
+  // === RECHERCHE ET FILTRES ===
+  // Rechercher des utilisateurs
+  async searchUsers(query) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .or(`email.ilike.%${query}%,full_name.ilike.%${query}%,prenom.ilike.%${query}%,nom.ilike.%${query}%`)
+      .order('created_at', { ascending: false });
+    return { data, error };
+  },
+
+  // Rechercher des communautés
+  async searchCommunities(query) {
+    try {
+      // Récupérer d'abord les communautés correspondantes
+      const { data: communities, error: communitiesError } = await supabase
+        .from('communities')
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%,location.ilike.%${query}%`)
+        .order('created_at', { ascending: false });
+      
+      if (communitiesError) return { data: null, error: communitiesError };
+      
+      if (!communities || communities.length === 0) {
+        return { data: [], error: null };
+      }
+      
+      // Récupérer les profils des référents
+      const referentIds = communities.map(c => c.referent_id).filter(Boolean);
+      
+      if (referentIds.length === 0) {
+        return { data: communities.map(c => ({ ...c, user_profiles: null })), error: null };
+      }
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', referentIds);
+      
+      if (profilesError) return { data: null, error: profilesError };
+      
+      // Combiner les données
+      const communitiesWithProfiles = communities.map(community => {
+        const profile = profiles?.find(p => p.id === community.referent_id);
+        return {
+          ...community,
+          user_profiles: profile || null
+        };
+      });
+      
+      return { data: communitiesWithProfiles, error: null };
+      
+    } catch (error) {
+      return { data: null, error };
+    }
+  },
+
+  // Rechercher des événements
+  async searchEvents(query) {
+    try {
+      // Récupérer d'abord les événements avec leurs communautés
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select(`
+          *,
+          communities (*)
+        `)
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%,location.ilike.%${query}%`)
+        .order('created_at', { ascending: false });
+      
+      if (eventsError) return { data: null, error: eventsError };
+      
+      if (!events || events.length === 0) {
+        return { data: [], error: null };
+      }
+      
+      // Récupérer les profils des référents des communautés
+      const referentIds = events
+        .map(e => e.communities?.referent_id)
+        .filter(Boolean);
+      
+      if (referentIds.length === 0) {
+        return { data: events, error: null };
+      }
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', referentIds);
+      
+      if (profilesError) return { data: null, error: profilesError };
+      
+      // Combiner les données
+      const eventsWithProfiles = events.map(event => {
+        if (event.communities && event.communities.referent_id) {
+          const profile = profiles?.find(p => p.id === event.communities.referent_id);
+          return {
+            ...event,
+            communities: {
+              ...event.communities,
+              user_profiles: profile || null
+            }
+          };
+        }
+        return event;
+      });
+      
+      return { data: eventsWithProfiles, error: null };
+      
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
 } 

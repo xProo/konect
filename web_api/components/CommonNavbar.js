@@ -1,5 +1,5 @@
 import { BrowserLink } from "./BrowserRouter.js";
-import { auth } from "../lib/supabase.js";
+import { auth, admin } from "../lib/supabase.js";
 
 export function createCommonNavbar() {
   return {
@@ -90,6 +90,26 @@ export function createCommonNavbar() {
                   ]
                 }
               }),
+              {
+                tag: "div",
+                attributes: [["id", "admin-nav-link"], ["style", { display: "none" }]],
+                children: [
+                  BrowserLink({
+                    link: "/admin",
+                    title: {
+                      tag: "div",
+                      attributes: [["class", "nav-link"], ["style", { color: "#dc3545", fontWeight: "600" }]],
+                      children: [
+                        {
+                          tag: "div",
+                          attributes: [["class", "label"]],
+                          children: ["Admin"]
+                        }
+                      ]
+                    }
+                  })
+                ]
+              },
             //   {
             //     tag: "div",
             //     attributes: [["class", "nav-link"]],
@@ -149,6 +169,9 @@ export async function updateCommonUserDisplay() {
   
   if (!userDisplay) return;
 
+  // Vérifier si l'utilisateur est admin et afficher le lien admin
+  await updateAdminNavLink(user);
+
   if (user) {
     let displayName = user.email;
     if (user.user_metadata && user.user_metadata.full_name) {
@@ -186,5 +209,23 @@ export async function handleCommonLogout() {
   } else {
     // Recharger la page pour mettre à jour l'état
     window.location.reload();
+  }
+}
+
+async function updateAdminNavLink(user) {
+  const adminNavLink = document.getElementById('admin-nav-link');
+  
+  if (!adminNavLink) return;
+
+  if (user) {
+    try {
+      const isAdminUser = await admin.isAdmin();
+      adminNavLink.style.display = isAdminUser ? 'block' : 'none';
+    } catch (error) {
+      console.error('Erreur lors de la vérification admin:', error);
+      adminNavLink.style.display = 'none';
+    }
+  } else {
+    adminNavLink.style.display = 'none';
   }
 } 

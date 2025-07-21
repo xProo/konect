@@ -10,6 +10,7 @@ import CommunityManagePage from "../views/CommunityManagePage.js";
 import CommunityDashboardPage from "../views/CommunityDashboardPage.js";
 import EventsPage from "../views/EventsPage.js";
 import EventDetailPage from "../views/EventDetailPage.js";
+import AdminPage from "../views/AdminPage.js";
 
 export default {
   "/": {
@@ -47,6 +48,9 @@ export default {
   },
   "/event-detail": {
     tag: EventDetailPage,
+  },
+  "/admin": {
+    tag: AdminPage,
   },
   "*": {
     tag: Page404,
