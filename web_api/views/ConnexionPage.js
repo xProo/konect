@@ -293,7 +293,7 @@ async function handleSignOut() {
     if (error) {
       showMessage(`Erreur de déconnexion: ${error.message}`, 'error');
     } else {
-      showMessage('👋 Déconnexion réussie ! À bientôt !', 'success');
+      showMessage(' Déconnexion réussie ! À bientôt !', 'success');
       await checkAuthStatus();
     }
   } catch (err) {

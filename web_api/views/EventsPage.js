@@ -1,15 +1,16 @@
 import { auth, database } from "../lib/supabase.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
+import { createCommonNavbar, updateCommonUserDisplay, handleCommonLogout } from "../components/CommonNavbar.js";
 
 export default function EventsPage() {
   // Initialiser la page après le rendu
   setTimeout(async () => {
     await loadPublicEvents();
-    await updateUserDisplay();
+    await updateCommonUserDisplay();
     
     // Écouter les changements d'authentification
     auth.onAuthStateChange((event, session) => {
-      updateUserDisplay();
+      updateCommonUserDisplay();
       loadPublicEvents(); // Recharger pour mettre à jour les statuts d'inscription
     });
   }, 100);
@@ -17,7 +18,7 @@ export default function EventsPage() {
   return {
     tag: "div",
     children: [
-      createNavbar(),
+      createCommonNavbar(),
       {
         tag: "div",
         attributes: [["style", { padding: "20px", maxWidth: "1200px", margin: "0 auto" }]],
@@ -164,113 +165,7 @@ export default function EventsPage() {
 }
 
 // === NAVIGATION ===
-
-function createNavbar() {
-  return {
-    tag: "nav",
-    attributes: [["style", { 
-      padding: "20px", 
-      backgroundColor: "#fff", 
-      borderBottom: "1px solid #ddd",
-      position: "sticky",
-      top: "0",
-      zIndex: "100",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-    }]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["style", { 
-          maxWidth: "1200px", 
-          margin: "0 auto",
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "20px"
-        }]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["style", { display: "flex", alignItems: "center", gap: "30px" }]],
-            children: [
-              BrowserLink({ 
-                link: "/", 
-                title: "🏠 Accueil",
-                style: "text-decoration: none; font-weight: bold; color: #007bff; font-size: 18px;"
-              }),
-              BrowserLink({ 
-                link: "/events", 
-                title: "🎉 Événements",
-                style: "text-decoration: none; font-weight: bold; color: #28a745; font-size: 16px;"
-              }),
-              BrowserLink({ 
-                link: "/communities", 
-                title: "🏘️ Mes Communautés",
-                style: "text-decoration: none; color: #6c757d; font-size: 16px;"
-              })
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["id", "user-display"], ["style", { display: "flex", alignItems: "center", gap: "15px" }]],
-            children: [
-              {
-                tag: "span",
-                attributes: [["style", { color: "#666" }]],
-                children: ["Chargement..."]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-async function updateUserDisplay() {
-  const { data: { user } } = await auth.getCurrentUser();
-  const userDisplay = document.getElementById('user-display');
-  
-  if (!userDisplay) return;
-
-  if (user) {
-    let displayName = user.email;
-    if (user.user_metadata && user.user_metadata.full_name) {
-      displayName = user.user_metadata.full_name;
-    } else if (user.user_metadata && user.user_metadata.prenom && user.user_metadata.nom) {
-      displayName = `${user.user_metadata.prenom} ${user.user_metadata.nom}`;
-    }
-
-    userDisplay.innerHTML = `
-      <span style="color: #28a745; font-weight: bold;">👋 ${displayName}</span>
-      <button onclick="handleLogout()" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-        🚪 Déconnexion
-      </button>
-    `;
-  } else {
-    userDisplay.innerHTML = `
-      <a href="/connexion" style="text-decoration: none; padding: 8px 15px; background: #007bff; color: white; border-radius: 5px; font-weight: bold;">
-        🔐 Se connecter
-      </a>
-      <a href="/inscription" style="text-decoration: none; padding: 8px 15px; background: #28a745; color: white; border-radius: 5px; font-weight: bold;">
-        ✍️ S'inscrire
-      </a>
-    `;
-  }
-}
-
-async function handleLogout() {
-  const { error } = await auth.signOut();
-  if (error) {
-    showMessage('Erreur lors de la déconnexion', 'error');
-  } else {
-    showMessage('Déconnexion réussie', 'success');
-    window.history.pushState({}, '', '/');
-    const popStateEvent = new PopStateEvent('popstate', { state: {} });
-    window.dispatchEvent(popStateEvent);
-  }
-}
+// Fonctions déplacées vers CommonNavbar.js
 
 // === GESTION DES ÉVÉNEMENTS ===
 
@@ -338,8 +233,24 @@ async function displayEvents(events) {
     })
   );
   
+  // Ajouter le CSS pour les effets hover
+  if (!document.getElementById('event-card-styles')) {
+    const style = document.createElement('style');
+    style.id = 'event-card-styles';
+    style.textContent = `
+      .event-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+      }
+      .event-card:hover {
+        transform: translateY(-5px) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   container.innerHTML = `
-    <div style="display: grid; gap: 25px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px;">
       ${eventsWithStatus.map(event => createEventCard(event)).join('')}
     </div>
   `;
@@ -352,64 +263,82 @@ function createEventCard(event) {
   const isFull = event.max_participants && event.participantCount >= event.max_participants;
   
   return `
-    <div style="border: 1px solid #ddd; border-radius: 15px; padding: 25px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
-      <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 20px; flex-wrap: wrap; gap: 20px;">
-        <div style="flex: 1; min-width: 300px;">
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <h3 style="margin: 0; color: #333; font-size: 1.5rem;">${event.title}</h3>
-            ${isEventPassed ? '<span style="padding: 3px 8px; background: #f8d7da; color: #721c24; border-radius: 12px; font-size: 12px; font-weight: bold;">✅ Terminé</span>' : ''}
-            ${isFull ? '<span style="padding: 3px 8px; background: #fff3cd; color: #856404; border-radius: 12px; font-size: 12px; font-weight: bold;">🔒 Complet</span>' : ''}
-          </div>
-          
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
-            <div style="display: flex; align-items: center; gap: 8px; color: #666;">
-              <span>📅</span>
-              <span>${eventDate ? eventDate.toLocaleDateString('fr-FR') : 'Date non définie'}</span>
-              ${event.time ? `<span style="color: #888;">à ${event.time}</span>` : ''}
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; color: #666;">
-              <span>📍</span>
-              <span>${event.location || 'Lieu non défini'}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; color: #007bff;">
-              <span>👥</span>
-              <span>${event.participantCount} participant${event.participantCount > 1 ? 's' : ''}${event.max_participants ? ` / ${event.max_participants}` : ''}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; color: ${event.price > 0 ? '#28a745' : '#6c757d'}; font-weight: bold;">
-              <span>${event.price > 0 ? '💰' : '🆓'}</span>
-              <span>${event.price > 0 ? `${event.price}€` : 'Gratuit'}</span>
-            </div>
-          </div>
-          
-          ${event.description ? `<p style="margin: 0; color: #555; font-style: italic; line-height: 1.5;">${event.description}</p>` : ''}
+      <div class="event-card" style="border: 1px solid #ddd; border-radius: 20px; background: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer;" onclick="goToEventDetail('${event.id}')">
+      <!-- Image de l'événement -->
+      <div style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; display: flex; align-items: center; justify-content: center; color: white;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3);"></div>
+        <div style="position: relative; text-align: center; z-index: 1;">
+          <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
+          <div style="font-size: 18px; font-weight: bold; padding: 0 20px;">${event.title}</div>
         </div>
         
-        <div style="display: flex; flex-direction: column; gap: 10px; min-width: 150px;">
-          ${!currentUser ? `
-            <a href="/connexion" style="padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center;">
-              🔐 Se connecter pour s'inscrire
-            </a>
-          ` : isEventPassed ? `
-            <button disabled style="padding: 12px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: not-allowed; font-weight: bold;">
-              ✅ Événement terminé
-            </button>
-          ` : event.isRegistered ? `
-            <button onclick="unregisterFromEvent('${event.id}')" style="padding: 12px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-              ❌ Se désinscrire
-            </button>
-          ` : isFull ? `
-            <button disabled style="padding: 12px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: not-allowed; font-weight: bold;">
-              🔒 Complet
-            </button>
-          ` : `
-            <button onclick="registerToEvent('${event.id}')" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-              ✅ S'inscrire
-            </button>
-          `}
+        <!-- Tags d'état -->
+        <div style="position: absolute; top: 15px; right: 15px; display: flex; gap: 8px;">
+          ${isEventPassed ? '<span style="padding: 4px 8px; background: rgba(248, 215, 218, 0.9); color: #721c24; border-radius: 15px; font-size: 11px; font-weight: bold;">✅ Terminé</span>' : ''}
+          ${isFull ? '<span style="padding: 4px 8px; background: rgba(255, 243, 205, 0.9); color: #856404; border-radius: 15px; font-size: 11px; font-weight: bold;">🔒 Complet</span>' : ''}
+          ${event.isRegistered ? '<span style="padding: 4px 8px; background: rgba(212, 237, 218, 0.9); color: #155724; border-radius: 15px; font-size: 11px; font-weight: bold;">✅ Inscrit</span>' : ''}
+        </div>
+      </div>
+      
+      <!-- Contenu de la carte -->
+      <div style="padding: 25px;">
+        <!-- Informations principales -->
+        <div style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #666;">
+            <span style="font-size: 16px;">📅</span>
+            <span style="font-weight: 500;">${eventDate ? eventDate.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Date non définie'}</span>
+          </div>
           
-          <button onclick="viewEventDetails('${event.id}')" style="padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
-            👁️ Détails
-          </button>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #666;">
+            <span style="font-size: 16px;">📍</span>
+            <span style="font-weight: 500;">${event.location || 'Lieu non défini'}</span>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 8px; color: #007bff;">
+            <span style="font-size: 16px;">👥</span>
+            <span style="font-weight: 500;">${event.participantCount} participant${event.participantCount > 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        
+        <!-- Description (tronquée) -->
+        ${event.description ? `
+          <p style="margin: 0 0 20px 0; color: #555; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            ${event.description}
+          </p>
+        ` : ''}
+        
+        <!-- Prix et action -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px; color: ${event.price > 0 ? '#28a745' : '#6c757d'};">${event.price > 0 ? '💰' : '🆓'}</span>
+            <span style="font-weight: bold; color: ${event.price > 0 ? '#28a745' : '#6c757d'}; font-size: 18px;">
+              ${event.price > 0 ? `${event.price}€` : 'Gratuit'}
+            </span>
+          </div>
+          
+          <div style="display: flex; gap: 10px;" onclick="event.stopPropagation();">
+            ${!currentUser ? `
+              <a href="/connexion" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 20px; font-weight: bold; text-decoration: none; font-size: 14px;">
+                🔐 Connexion
+              </a>
+            ` : isEventPassed ? `
+              <button disabled style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 20px; cursor: not-allowed; font-weight: bold; font-size: 14px;">
+                ✅ Terminé
+              </button>
+            ` : event.isRegistered ? `
+              <button onclick="unregisterFromEvent('${event.id}')" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                ❌ Se désinscrire
+              </button>
+            ` : isFull ? `
+              <button disabled style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 20px; cursor: not-allowed; font-weight: bold; font-size: 14px;">
+                🔒 Complet
+              </button>
+            ` : `
+              <button onclick="registerToEvent('${event.id}')" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                ✅ S'inscrire
+              </button>
+            `}
+          </div>
         </div>
       </div>
     </div>
@@ -462,14 +391,16 @@ async function unregisterFromEvent(eventId) {
   }
 }
 
-function viewEventDetails(eventId) {
-  const event = allEvents.find(e => e.id === eventId);
-  if (!event) {
-    showMessage('Événement non trouvé', 'error');
+function goToEventDetail(eventId) {
+  if (!eventId) {
+    showMessage('ID d\'événement manquant', 'error');
     return;
   }
   
-  showEventDetailsModal(event);
+  // Rediriger vers la page de détail avec l'ID en paramètre
+  window.history.pushState({}, '', `/event-detail?id=${eventId}`);
+  const popStateEvent = new PopStateEvent('popstate', { state: {} });
+  window.dispatchEvent(popStateEvent);
 }
 
 // === FILTRES ===
@@ -644,8 +575,8 @@ function showMessage(message, type) {
 }
 
 // Rendre les fonctions disponibles globalement
-window.handleLogout = handleLogout;
+window.handleLogout = handleCommonLogout;
 window.registerToEvent = registerToEvent;
 window.unregisterFromEvent = unregisterFromEvent;
-window.viewEventDetails = viewEventDetails;
+window.goToEventDetail = goToEventDetail;
 window.closeEventDetailsModal = closeEventDetailsModal; 

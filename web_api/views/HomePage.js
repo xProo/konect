@@ -1,14 +1,15 @@
 import { BrowserLink } from "../components/BrowserRouter.js";
 import { auth, database } from "../lib/supabase.js";
+import { createCommonNavbar, updateCommonUserDisplay, handleCommonLogout } from "../components/CommonNavbar.js";
 
 export default function HomePage() {
   // Initialiser l'affichage utilisateur après le rendu
   setTimeout(async () => {
-    await updateUserDisplay();
+    await updateCommonUserDisplay();
     await loadCommunities(); // Charger les communautés
     // Écouter les changements d'authentification
     auth.onAuthStateChange((event, session) => {
-      updateUserDisplay();
+      updateCommonUserDisplay();
       loadCommunities(); // Recharger les communautés quand l'auth change
     });
   }, 100);
@@ -16,7 +17,7 @@ export default function HomePage() {
   return {
     tag: "div",
     children: [
-      createNavbar(),
+      createCommonNavbar(),
       createContent()
     ]
   };
@@ -83,21 +84,20 @@ function createNavbar() {
                   }
                 ]
               },
-              {
-                tag: "div",
-                attributes: [["class", "dropdown"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Evenement"]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-                  }
-                ]
-              },
+              BrowserLink({
+                link: "/events",
+                title: {
+                  tag: "div",
+                  attributes: [["class", "nav-link"]],
+                  children: [
+                    {
+                      tag: "div",
+                      attributes: [["class", "label"]],
+                      children: ["Événements"]
+                    }
+                  ]
+                }
+              }),
               BrowserLink({
                 link: "/communities",
                 title: {
@@ -112,17 +112,17 @@ function createNavbar() {
                   ]
                 }
               }),
-              {
-                tag: "div",
-                attributes: [["class", "nav-link"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Billeterie"]
-                  }
-                ]
-              },
+            //   {
+            //     tag: "div",
+            //     attributes: [["class", "nav-link"]],
+            //     children: [
+            //       {
+            //         tag: "div",
+            //         attributes: [["class", "label"]],
+            //         children: ["Billeterie"]
+            //       }
+            //     ]
+            //   },
               {
                 tag: "div",
                 attributes: [["class", "dropdown"]],
@@ -1774,70 +1774,7 @@ function viewDashboard(communityId) {
   window.dispatchEvent(popStateEvent);
 }
 
-// Fonction pour mettre à jour l'affichage utilisateur dans la navbar
-async function updateUserDisplay() {
-  const userDisplayArea = document.getElementById('user-display-area');
-  if (!userDisplayArea) return;
-  
-  try {
-    const { data: { user } } = await auth.getCurrentUser();
-    
-    if (user) {
-      // Utilisateur connecté - afficher nom/prénom et bouton déconnexion
-      let displayName = user.email;
-      if (user.user_metadata && user.user_metadata.full_name) {
-        displayName = user.user_metadata.full_name;
-      } else if (user.user_metadata && user.user_metadata.prenom && user.user_metadata.nom) {
-        displayName = `${user.user_metadata.prenom} ${user.user_metadata.nom}`;
-      }
-      
-      userDisplayArea.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="text-align: right;">
-            <div style="font-weight: 600; color: #333; font-size: 14px;"> ${displayName}</div>
-            <div style="font-size: 12px; color: #666;">${user.email}</div>
-          </div>
-          <button id="logout-btn" class="dark-button" style="padding: 8px 16px; font-size: 14px;">
-            Déconnexion
-          </button>
-        </div>
-      `;
-      
-      // Ajouter l'événement de déconnexion
-      const logoutBtn = document.getElementById('logout-btn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-          await handleLogout();
-        });
-      }
-      
-    } else {
-      // Utilisateur non connecté - afficher bouton connexion
-      userDisplayArea.innerHTML = `
-        <div class="dark-button" style="cursor: pointer;" onclick="navigateToLogin()">
-          <img class="map-pin-icon" alt="" src="images/Icon.svg" />
-          <div class="label5">Connexion</div>
-        </div>
-      `;
-    }
-  } catch (error) {
-    console.error('Erreur lors de la vérification de l\'utilisateur:', error);
-  }
-}
-
-async function handleLogout() {
-  try {
-    const { error } = await auth.signOut();
-    if (error) {
-      console.error('Erreur de déconnexion:', error);
-    } else {
-      // Rafraîchir l'affichage
-      await updateUserDisplay();
-    }
-  } catch (error) {
-    console.error('Erreur inattendue:', error);
-  }
-}
+// Ces fonctions sont maintenant dans CommonNavbar.js
 
 function navigateToLogin() {
   window.history.pushState({}, '', '/connexion');
@@ -1850,3 +1787,4 @@ window.navigateToLogin = navigateToLogin;
 window.joinCommunityFromHome = joinCommunityFromHome;
 window.leaveCommunityFromHome = leaveCommunityFromHome;
 window.viewDashboard = viewDashboard;
+window.handleLogout = handleCommonLogout;

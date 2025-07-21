@@ -345,17 +345,17 @@ function createNavbar() {
                   ]
                 }
               }),
-              {
-                tag: "div",
-                attributes: [["class", "nav-link"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Billeterie"]
-                  }
-                ]
-              },
+            //   {
+            //     tag: "div",
+            //     attributes: [["class", "nav-link"]],
+            //     children: [
+            //       {
+            //         tag: "div",
+            //         attributes: [["class", "label"]],
+            //         children: ["Billeterie"]
+            //       }
+            //     ]
+            //   },
               {
                 tag: "div",
                 attributes: [["class", "dropdown"]],
