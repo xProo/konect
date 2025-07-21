@@ -96,21 +96,20 @@ function createNavbar() {
                   }
                 ]
               },
-              {
-                tag: "div",
-                attributes: [["class", "dropdown"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Cummunautés"]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-                  }
-                ]
-              },
+              BrowserLink({
+                link: "/communities",
+                title: {
+                  tag: "div",
+                  attributes: [["class", "nav-link"]],
+                  children: [
+                    {
+                      tag: "div",
+                      attributes: [["class", "label"]],
+                      children: ["Mes Communautés"]
+                    }
+                  ]
+                }
+              }),
               {
                 tag: "div",
                 attributes: [["class", "nav-link"]],
@@ -1550,7 +1549,7 @@ async function updateUserDisplay() {
       userDisplayArea.innerHTML = `
         <div style="display: flex; align-items: center; gap: 12px;">
           <div style="text-align: right;">
-            <div style="font-weight: 600; color: #333; font-size: 14px;">👋 ${displayName}</div>
+            <div style="font-weight: 600; color: #333; font-size: 14px;"> ${displayName}</div>
             <div style="font-size: 12px; color: #666;">${user.email}</div>
           </div>
           <button id="logout-btn" class="dark-button" style="padding: 8px 16px; font-size: 14px;">

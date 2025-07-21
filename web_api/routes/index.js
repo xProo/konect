@@ -6,6 +6,8 @@ import InscriptionPage from "../views/InscriptionPage.js";
 import ConnexionPage from "../views/ConnexionPage.js";
 import AccueilPage from "../views/AccueilPage.js";
 import HomePage from "../views/HomePage.js";
+import CommunityManagePage from "../views/CommunityManagePage.js";
+import CommunityDashboardPage from "../views/CommunityDashboardPage.js";
 
 export default {
   "/": {
@@ -31,6 +33,12 @@ export default {
   },
   "/gallery": {
     tag: Gallery,
+  },
+  "/communities": {
+    tag: CommunityManagePage,
+  },
+  "/community-dashboard": {
+    tag: CommunityDashboardPage,
   },
   "*": {
     tag: Page404,
