@@ -1,5 +1,6 @@
 import { auth, database } from "../lib/supabase.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
+import { createCommonNavbar, updateCommonUserDisplay, handleCommonLogout } from "../components/CommonNavbar.js";
 
 export default function CommunityDashboardPage() {
   // Récupérer l'ID de la communauté depuis les paramètres de l'URL
@@ -9,269 +10,687 @@ export default function CommunityDashboardPage() {
   // Initialiser la page après le rendu
   setTimeout(async () => {
     await loadDashboard(communityId);
+    await updateCommonUserDisplay();
+    
     // Écouter les changements d'authentification
     auth.onAuthStateChange((event, session) => {
       if (session) {
         loadDashboard(communityId);
       } else {
-        // Rediriger vers connexion si non connecté
         window.history.pushState({}, '', '/connexion');
         const popStateEvent = new PopStateEvent('popstate', { state: {} });
         window.dispatchEvent(popStateEvent);
       }
+      updateCommonUserDisplay();
     });
   }, 100);
 
   return {
     tag: "div",
-    attributes: [["style", { padding: "20px", maxWidth: "1200px", margin: "0 auto" }]],
     children: [
-      // Navigation
-      {
-        tag: "nav",
-        attributes: [["style", { marginBottom: "30px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "5px", textAlign: "center" }]],
-        children: [
-          BrowserLink({ link: "/", title: "Accueil" }),
-          " | ",
-          BrowserLink({ link: "/communities", title: "Mes Communautés" }),
-          " | ",
-          BrowserLink({ link: "/connexion", title: "Connexion" })
-        ]
-      },
-
-      // Titre et informations de base
+      createCommonNavbar(),
+      
+      // Hero Section avec breadcrumb
       {
         tag: "div",
-        attributes: [["id", "community-header"], ["style", { marginBottom: "30px", textAlign: "center" }]],
+        attributes: [["style", { 
+          background: "linear-gradient(135deg, #6c757d 0%, #f4a261 100%)", 
+          padding: "60px 20px 40px", 
+          color: "white" 
+        }]],
         children: [
           {
-            tag: "h1",
-            attributes: [["style", { color: "#333", marginBottom: "10px" }]],
-            children: ["📊 Dashboard Communauté"]
-          },
-          {
             tag: "div",
-            attributes: [["style", { color: "#666", fontSize: "14px" }]],
-            children: ["Chargement des informations..."]
-          }
-        ]
-      },
-
-      // Messages
-      {
-        tag: "div",
-        attributes: [["id", "message"], ["style", { padding: "10px", marginBottom: "20px", borderRadius: "5px", display: "none" }]],
-        children: []
-      },
-
-      // Statistiques principales
-      {
-        tag: "div",
-        attributes: [["style", { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginBottom: "40px" }]],
-        children: [
-          // Carte Membres
-          {
-            tag: "div",
-            attributes: [["style", { padding: "25px", backgroundColor: "#e8f5e8", border: "1px solid #28a745", borderRadius: "10px", textAlign: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }]],
+            attributes: [["style", { maxWidth: "1200px", margin: "0 auto" }]],
             children: [
+              // Breadcrumb
               {
-                tag: "div",
-                attributes: [["style", { fontSize: "48px", marginBottom: "10px" }]],
-                children: ["👥"]
+                tag: "nav",
+                attributes: [["style", { marginBottom: "30px" }]],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: "8px", 
+                      fontSize: "14px", 
+                      opacity: "0.9" 
+                    }]],
+                    children: [
+                      BrowserLink({ 
+                        link: "/", 
+                        title: "Accueil",
+                        style: "color: white; text-decoration: none;"
+                      }),
+                      {
+                        tag: "span",
+                        children: ["/"]
+                      },
+                      BrowserLink({ 
+                        link: "/communities", 
+                        title: "Mes Communautés",
+                        style: "color: white; text-decoration: none;"
+                      }),
+                      {
+                        tag: "span",
+                        children: ["/"]
+                      },
+                      {
+                        tag: "span",
+                        attributes: [["style", { fontWeight: "500" }]],
+                        children: ["Dashboard"]
+                      }
+                    ]
+                  }
+                ]
               },
-              {
-                tag: "h3",
-                attributes: [["style", { margin: "0 0 10px 0", color: "#28a745" }]],
-                children: ["Membres"]
-              },
-              {
-                tag: "div",
-                attributes: [["id", "members-count"], ["style", { fontSize: "32px", fontWeight: "bold", color: "#333" }]],
-                children: ["..."]
-              }
-            ]
-          },
 
-          // Carte Événements
-          {
-            tag: "div",
-            attributes: [["style", { padding: "25px", backgroundColor: "#e3f2fd", border: "1px solid #007bff", borderRadius: "10px", textAlign: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }]],
-            children: [
+              // Titre et informations de base
               {
                 tag: "div",
-                attributes: [["style", { fontSize: "48px", marginBottom: "10px" }]],
-                children: ["📅"]
-              },
-              {
-                tag: "h3",
-                attributes: [["style", { margin: "0 0 10px 0", color: "#007bff" }]],
-                children: ["Événements"]
-              },
-              {
-                tag: "div",
-                attributes: [["id", "events-count"], ["style", { fontSize: "32px", fontWeight: "bold", color: "#333" }]],
-                children: ["..."]
-              }
-            ]
-          },
-
-          // Carte Statut
-          {
-            tag: "div",
-            attributes: [["style", { padding: "25px", backgroundColor: "#fff3cd", border: "1px solid #ffc107", borderRadius: "10px", textAlign: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["style", { fontSize: "48px", marginBottom: "10px" }]],
-                children: ["✨"]
-              },
-              {
-                tag: "h3",
-                attributes: [["style", { margin: "0 0 10px 0", color: "#856404" }]],
-                children: ["Statut"]
-              },
-              {
-                tag: "div",
-                attributes: [["style", { fontSize: "18px", fontWeight: "bold", color: "#333" }]],
-                children: ["Active"]
+                attributes: [["id", "community-header"]],
+                children: [
+                  {
+                    tag: "h1",
+                    attributes: [["style", { 
+                      fontSize: "2.5rem", 
+                      fontWeight: "300", 
+                      margin: "0 0 15px 0",
+                      letterSpacing: "-1px"
+                    }]],
+                    children: ["Dashboard Communauté"]
+                  },
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      fontSize: "1.1rem", 
+                      opacity: "0.9",
+                      fontWeight: "300"
+                    }]],
+                    children: ["Chargement des informations..."]
+                  }
+                ]
               }
             ]
           }
         ]
       },
 
-      // Section Actions rapides
+      // Main Content
       {
         tag: "div",
-        attributes: [["style", { marginBottom: "40px", padding: "25px", backgroundColor: "#fff", border: "1px solid #ddd", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }]],
+        attributes: [["style", { 
+          backgroundColor: "#f8f9fa",
+          minHeight: "100vh",
+          paddingBottom: "40px"
+        }]],
         children: [
           {
-            tag: "h2",
-            attributes: [["style", { color: "#333", marginBottom: "20px", borderBottom: "2px solid #007bff", paddingBottom: "10px" }]],
-            children: ["🚀 Actions rapides"]
-          },
-          
-          {
             tag: "div",
-            attributes: [["style", { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }]],
+            attributes: [["style", { 
+              maxWidth: "1200px", 
+              margin: "0 auto", 
+              padding: "40px 20px" 
+            }]],
             children: [
-              {
-                tag: "button",
-                attributes: [
-                  ["onclick", "createCommunityEvent()"],
-                  ["style", { 
-                    padding: "15px", 
-                    backgroundColor: "#28a745", 
-                    color: "white", 
-                    border: "none", 
-                    borderRadius: "8px", 
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "16px"
-                  }]
-                ],
-                children: ["📅 Créer un événement"]
-              },
-              {
-                tag: "button",
-                attributes: [
-                  ["onclick", "inviteMembers()"],
-                  ["style", { 
-                    padding: "15px", 
-                    backgroundColor: "#007bff", 
-                    color: "white", 
-                    border: "none", 
-                    borderRadius: "8px", 
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "16px"
-                  }]
-                ],
-                children: ["👥 Inviter des membres"]
-              },
-              {
-                tag: "button",
-                attributes: [
-                  ["onclick", "editCommunity()"],
-                  ["style", { 
-                    padding: "15px", 
-                    backgroundColor: "#ffc107", 
-                    color: "#333", 
-                    border: "none", 
-                    borderRadius: "8px", 
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "16px"
-                  }]
-                ],
-                children: ["✏️ Modifier la communauté"]
-              },
-              {
-                tag: "button",
-                attributes: [
-                  ["onclick", "viewPublicPage()"],
-                  ["style", { 
-                    padding: "15px", 
-                    backgroundColor: "#6c757d", 
-                    color: "white", 
-                    border: "none", 
-                    borderRadius: "8px", 
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                    fontSize: "16px"
-                  }]
-                ],
-                children: ["🌐 Voir page publique"]
-              }
-            ]
-          }
-        ]
-      },
-
-      // Section Membres
-      {
-        tag: "div",
-        attributes: [["style", { marginBottom: "40px", padding: "25px", backgroundColor: "#fff", border: "1px solid #ddd", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }]],
-        children: [
-          {
-            tag: "h2",
-            attributes: [["style", { color: "#28a745", marginBottom: "20px", borderBottom: "2px solid #28a745", paddingBottom: "10px" }]],
-            children: ["👥 Gestion des membres"]
-          },
-
-          {
-            tag: "div",
-            attributes: [["id", "members-list"], ["style", { minHeight: "200px" }]],
-            children: [
+              // Messages
               {
                 tag: "div",
-                attributes: [["style", { textAlign: "center", padding: "50px", color: "#666" }]],
-                children: ["Chargement des membres..."]
-              }
-            ]
-          }
-        ]
-      },
+                attributes: [["id", "message"], ["style", { 
+                  padding: "15px", 
+                  marginBottom: "30px", 
+                  borderRadius: "8px", 
+                  display: "none",
+                  fontSize: "14px",
+                  fontWeight: "500"
+                }]],
+                children: []
+              },
 
-      // Section Événements
-      {
-        tag: "div",
-        attributes: [["style", { padding: "25px", backgroundColor: "#fff", border: "1px solid #ddd", borderRadius: "10px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }]],
-        children: [
-          {
-            tag: "h2",
-            attributes: [["style", { color: "#007bff", marginBottom: "20px", borderBottom: "2px solid #007bff", paddingBottom: "10px" }]],
-            children: ["📅 Événements de la communauté"]
-          },
-
-          {
-            tag: "div",
-            attributes: [["id", "events-list"], ["style", { minHeight: "200px" }]],
-            children: [
+              // Statistiques principales en cards
               {
                 tag: "div",
-                attributes: [["style", { textAlign: "center", padding: "50px", color: "#666" }]],
-                children: ["Chargement des événements..."]
+                attributes: [["style", { 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
+                  gap: "25px", 
+                  marginBottom: "40px" 
+                }]],
+                children: [
+                  // Carte Membres
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      backgroundColor: "white", 
+                      padding: "30px", 
+                      borderRadius: "12px", 
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      border: "1px solid #e9ecef",
+                      borderLeft: "4px solid #f4a261"
+                    }]],
+                    children: [
+                      {
+                        tag: "div",
+                        attributes: [["style", { 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "space-between", 
+                          marginBottom: "20px" 
+                        }]],
+                        children: [
+                          {
+                            tag: "div",
+                            children: [
+                              {
+                                tag: "h3",
+                                attributes: [["style", { 
+                                  margin: "0 0 5px 0", 
+                                  color: "#2c3e50", 
+                                  fontSize: "1.1rem",
+                                  fontWeight: "600"
+                                }]],
+                                children: ["Membres"]
+                              },
+                              {
+                                tag: "div",
+                                attributes: [["id", "members-count"], ["style", { 
+                                  fontSize: "2rem", 
+                                  fontWeight: "700", 
+                                  color: "#f4a261" 
+                                }]],
+                                children: ["..."]
+                              }
+                            ]
+                          },
+                          {
+                            tag: "div",
+                            attributes: [["style", { 
+                              width: "50px", 
+                              height: "50px", 
+                              borderRadius: "50%", 
+                              backgroundColor: "#f4a261", 
+                              display: "flex", 
+                              alignItems: "center", 
+                              justifyContent: "center",
+                              opacity: "0.1"
+                            }]],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "24"],
+                                  ["height", "24"],
+                                  ["fill", "#f4a261"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-7.5c0-.83-.67-1.5-1.5-1.5S6 9.67 6 10.5V11H4c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5z"]]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+
+                  // Carte Événements
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      backgroundColor: "white", 
+                      padding: "30px", 
+                      borderRadius: "12px", 
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      border: "1px solid #e9ecef",
+                      borderLeft: "4px solid #6c757d"
+                    }]],
+                    children: [
+                      {
+                        tag: "div",
+                        attributes: [["style", { 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "space-between", 
+                          marginBottom: "20px" 
+                        }]],
+                        children: [
+                          {
+                            tag: "div",
+                            children: [
+                              {
+                                tag: "h3",
+                                attributes: [["style", { 
+                                  margin: "0 0 5px 0", 
+                                  color: "#2c3e50", 
+                                  fontSize: "1.1rem",
+                                  fontWeight: "600"
+                                }]],
+                                children: ["Événements"]
+                              },
+                              {
+                                tag: "div",
+                                attributes: [["id", "events-count"], ["style", { 
+                                  fontSize: "2rem", 
+                                  fontWeight: "700", 
+                                  color: "#6c757d" 
+                                }]],
+                                children: ["..."]
+                              }
+                            ]
+                          },
+                          {
+                            tag: "div",
+                            attributes: [["style", { 
+                              width: "50px", 
+                              height: "50px", 
+                              borderRadius: "50%", 
+                              backgroundColor: "#6c757d", 
+                              display: "flex", 
+                              alignItems: "center", 
+                              justifyContent: "center",
+                              opacity: "0.1"
+                            }]],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "24"],
+                                  ["height", "24"],
+                                  ["fill", "#6c757d"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"]]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+
+                  // Carte Statut
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      backgroundColor: "white", 
+                      padding: "30px", 
+                      borderRadius: "12px", 
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      border: "1px solid #e9ecef",
+                      borderLeft: "4px solid #28a745"
+                    }]],
+                    children: [
+                      {
+                        tag: "div",
+                        attributes: [["style", { 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "space-between", 
+                          marginBottom: "20px" 
+                        }]],
+                        children: [
+                          {
+                            tag: "div",
+                            children: [
+                              {
+                                tag: "h3",
+                                attributes: [["style", { 
+                                  margin: "0 0 5px 0", 
+                                  color: "#2c3e50", 
+                                  fontSize: "1.1rem",
+                                  fontWeight: "600"
+                                }]],
+                                children: ["Statut"]
+                              },
+                              {
+                                tag: "div",
+                                attributes: [["style", { 
+                                  fontSize: "1.1rem", 
+                                  fontWeight: "600", 
+                                  color: "#28a745" 
+                                }]],
+                                children: ["Active"]
+                              }
+                            ]
+                          },
+                          {
+                            tag: "div",
+                            attributes: [["style", { 
+                              width: "50px", 
+                              height: "50px", 
+                              borderRadius: "50%", 
+                              backgroundColor: "#28a745", 
+                              display: "flex", 
+                              alignItems: "center", 
+                              justifyContent: "center",
+                              opacity: "0.1"
+                            }]],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "24"],
+                                  ["height", "24"],
+                                  ["fill", "#28a745"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"]]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+
+              // Section Actions rapides
+              {
+                tag: "div",
+                attributes: [["style", { marginBottom: "40px" }]],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      backgroundColor: "white", 
+                      padding: "30px", 
+                      borderRadius: "12px", 
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      border: "1px solid #e9ecef"
+                    }]],
+                    children: [
+                      {
+                        tag: "h2",
+                        attributes: [["style", { 
+                          color: "#2c3e50", 
+                          marginBottom: "25px", 
+                          fontSize: "1.5rem",
+                          fontWeight: "600",
+                          borderBottom: "2px solid #f4a261", 
+                          paddingBottom: "10px",
+                          display: "inline-block"
+                        }]],
+                        children: ["Actions rapides"]
+                      },
+                      
+                      {
+                        tag: "div",
+                        attributes: [["style", { 
+                          display: "grid", 
+                          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
+                          gap: "20px" 
+                        }]],
+                        children: [
+                          {
+                            tag: "button",
+                            attributes: [
+                              ["onclick", "createCommunityEvent()"],
+                              ["style", { 
+                                padding: "20px", 
+                                backgroundColor: "#f4a261", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "10px", 
+                                cursor: "pointer",
+                                fontWeight: "600",
+                                fontSize: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                              }]
+                            ],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "20"],
+                                  ["height", "20"],
+                                  ["fill", "white"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"]]
+                                  }
+                                ]
+                              },
+                              "Créer un événement"
+                            ]
+                          },
+                          {
+                            tag: "button",
+                            attributes: [
+                              ["onclick", "inviteMembers()"],
+                              ["style", { 
+                                padding: "20px", 
+                                backgroundColor: "#6c757d", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "10px", 
+                                cursor: "pointer",
+                                fontWeight: "600",
+                                fontSize: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                              }]
+                            ],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "20"],
+                                  ["height", "20"],
+                                  ["fill", "white"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"]]
+                                  }
+                                ]
+                              },
+                              "Inviter des membres"
+                            ]
+                          },
+                          {
+                            tag: "button",
+                            attributes: [
+                              ["onclick", "editCommunity()"],
+                              ["style", { 
+                                padding: "20px", 
+                                backgroundColor: "#495057", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "10px", 
+                                cursor: "pointer",
+                                fontWeight: "600",
+                                fontSize: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                              }]
+                            ],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "20"],
+                                  ["height", "20"],
+                                  ["fill", "white"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"]]
+                                  }
+                                ]
+                              },
+                              "Modifier la communauté"
+                            ]
+                          },
+                          {
+                            tag: "button",
+                            attributes: [
+                              ["onclick", "viewPublicPage()"],
+                              ["style", { 
+                                padding: "20px", 
+                                backgroundColor: "#e76f51", 
+                                color: "white", 
+                                border: "none", 
+                                borderRadius: "10px", 
+                                cursor: "pointer",
+                                fontWeight: "600",
+                                fontSize: "16px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                transition: "transform 0.2s ease, box-shadow 0.2s ease"
+                              }]
+                            ],
+                            children: [
+                              {
+                                tag: "svg",
+                                attributes: [
+                                  ["width", "20"],
+                                  ["height", "20"],
+                                  ["fill", "white"],
+                                  ["viewBox", "0 0 24 24"]
+                                ],
+                                children: [
+                                  {
+                                    tag: "path",
+                                    attributes: [["d", "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"]]
+                                  }
+                                ]
+                              },
+                              "Voir page publique"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+
+              // Section Membres
+              {
+                tag: "div",
+                attributes: [["style", { marginBottom: "40px" }]],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      backgroundColor: "white", 
+                      padding: "30px", 
+                      borderRadius: "12px", 
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      border: "1px solid #e9ecef"
+                    }]],
+                    children: [
+                      {
+                        tag: "h2",
+                        attributes: [["style", { 
+                          color: "#2c3e50", 
+                          marginBottom: "25px", 
+                          fontSize: "1.5rem",
+                          fontWeight: "600",
+                          borderBottom: "2px solid #f4a261", 
+                          paddingBottom: "10px",
+                          display: "inline-block"
+                        }]],
+                        children: ["Gestion des membres"]
+                      },
+
+                      {
+                        tag: "div",
+                        attributes: [["id", "members-list"], ["style", { minHeight: "200px" }]],
+                        children: [
+                          {
+                            tag: "div",
+                            attributes: [["style", { 
+                              textAlign: "center", 
+                              padding: "50px", 
+                              color: "#6c757d" 
+                            }]],
+                            children: ["Chargement des membres..."]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+
+              // Section Événements
+              {
+                tag: "div",
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["style", { 
+                      backgroundColor: "white", 
+                      padding: "30px", 
+                      borderRadius: "12px", 
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                      border: "1px solid #e9ecef"
+                    }]],
+                    children: [
+                      {
+                        tag: "h2",
+                        attributes: [["style", { 
+                          color: "#2c3e50", 
+                          marginBottom: "25px", 
+                          fontSize: "1.5rem",
+                          fontWeight: "600",
+                          borderBottom: "2px solid #6c757d", 
+                          paddingBottom: "10px",
+                          display: "inline-block"
+                        }]],
+                        children: ["Événements de la communauté"]
+                      },
+
+                      {
+                        tag: "div",
+                        attributes: [["id", "events-list"], ["style", { minHeight: "200px" }]],
+                        children: [
+                          {
+                            tag: "div",
+                            attributes: [["style", { 
+                              textAlign: "center", 
+                              padding: "50px", 
+                              color: "#6c757d" 
+                            }]],
+                            children: ["Chargement des événements..."]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -327,14 +746,25 @@ async function loadDashboard(communityId) {
 function updateCommunityHeader(community) {
   const header = document.getElementById('community-header');
   header.innerHTML = `
-    <h1 style="color: #333; margin-bottom: 10px;">📊 Dashboard - ${community.name}</h1>
-    <div style="color: #666; font-size: 16px; margin-bottom: 10px;">
-      <span style="background: #e9ecef; padding: 5px 10px; border-radius: 15px; margin-right: 10px;">
-        ${community.category}
-      </span>
-      📍 ${community.location}
+    <h1 style="font-size: 2.5rem; font-weight: 300; margin: 0 0 15px 0; letter-spacing: -1px;">
+      Dashboard - ${community.name}
+    </h1>
+    <div style="font-size: 1.1rem; opacity: 0.9; font-weight: 300; line-height: 1.5;">
+      <div style="display: inline-flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; backdrop-filter: blur(10px);">
+          ${community.category || 'Général'}
+        </span>
+        <span style="display: flex; align-items: center; gap: 5px;">
+          <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          ${community.location || 'Non spécifié'}
+        </span>
+      </div>
+      <div style="margin-top: 15px; font-style: italic; opacity: 0.8;">
+        ${community.description || ''}
+      </div>
     </div>
-    <p style="color: #555; font-style: italic; margin: 0;">${community.description}</p>
   `;
 }
 
@@ -376,9 +806,14 @@ function displayMembers(members) {
   
   if (members.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 50px; color: #666;">
-        <p>👥 Aucun membre pour le moment.</p>
-        <p>Invitez des personnes à rejoindre votre communauté !</p>
+      <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
+        <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <svg width="32" height="32" fill="#6c757d" viewBox="0 0 24 24">
+            <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-7.5c0-.83-.67-1.5-1.5-1.5S6 9.67 6 10.5V11H4c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5z"/>
+          </svg>
+        </div>
+        <h3 style="color: #2c3e50; margin-bottom: 10px; font-weight: 600;">Aucun membre</h3>
+        <p style="margin: 0;">Invitez des personnes à rejoindre votre communauté</p>
       </div>
     `;
     return;
@@ -387,21 +822,29 @@ function displayMembers(members) {
   container.innerHTML = `
     <div style="display: grid; gap: 15px;">
       ${members.map(member => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
-          <div>
-            <strong style="color: #333;">${member.user_profiles?.full_name || member.user_profiles?.email || 'Utilisateur'}</strong>
-            <div style="color: #666; font-size: 14px;">
-              ${member.user_profiles?.email || 'Email non disponible'}
-              ${member.user_profiles?.prenom && member.user_profiles?.nom ? 
-                ` (${member.user_profiles.prenom} ${member.user_profiles.nom})` : ''}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border: 1px solid #e9ecef; border-radius: 10px; background: #f8f9fa; transition: box-shadow 0.2s ease;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1.2rem;">
+              ${(member.user_profiles?.full_name || member.user_profiles?.email || 'U').charAt(0).toUpperCase()}
             </div>
-            <div style="color: #888; font-size: 12px;">Membre depuis : ${new Date(member.joined_at).toLocaleDateString('fr-FR')}</div>
+            <div>
+              <div style="font-weight: 600; color: #2c3e50; font-size: 1.1rem; margin-bottom: 5px;">
+                ${member.user_profiles?.full_name || member.user_profiles?.email || 'Utilisateur'}
+              </div>
+              <div style="color: #6c757d; font-size: 14px; margin-bottom: 3px;">
+                ${member.user_profiles?.email || 'Email non disponible'}
+              </div>
+              <div style="color: #adb5bd; font-size: 12px;">
+                Membre depuis le ${new Date(member.joined_at).toLocaleDateString('fr-FR')}
+              </div>
+            </div>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button onclick="removeMember('${member.user_id}')" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
-              🗑️ Retirer
-            </button>
-          </div>
+          <button onclick="removeMember('${member.user_id}')" style="padding: 10px 15px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Retirer
+          </button>
         </div>
       `).join('')}
     </div>
@@ -429,9 +872,14 @@ async function displayEvents(events) {
   
   if (events.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 50px; color: #666;">
-        <p>📅 Aucun événement créé pour le moment.</p>
-        <p>Commencez par créer votre premier événement !</p>
+      <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
+        <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <svg width="32" height="32" fill="#6c757d" viewBox="0 0 24 24">
+            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+          </svg>
+        </div>
+        <h3 style="color: #2c3e50; margin-bottom: 10px; font-weight: 600;">Aucun événement créé</h3>
+        <p style="margin: 0;">Commencez par créer votre premier événement</p>
       </div>
     `;
     return;
@@ -452,33 +900,66 @@ async function displayEvents(events) {
   container.innerHTML = `
     <div style="display: grid; gap: 20px;">
       ${eventsWithStats.map(event => `
-        <div style="border: 1px solid #ddd; border-radius: 10px; padding: 20px; background: #f9f9f9;">
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+        <div style="border: 1px solid #e9ecef; border-radius: 12px; padding: 25px; background: #f8f9fa; border-left: 4px solid #f4a261;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
             <div style="flex: 1;">
-              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                <h3 style="margin: 0; color: #333;">${event.title || 'Événement sans titre'}</h3>
+              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); display: flex; align-items: center; justify-content: center;">
+                  <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                  </svg>
+                </div>
+                <h3 style="margin: 0; color: #2c3e50; font-size: 1.3rem; font-weight: 600;">
+                  ${event.title || 'Événement sans titre'}
+                </h3>
               </div>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
-                <p style="margin: 0; color: #666;">📅 ${event.date ? new Date(event.date).toLocaleDateString('fr-FR') : 'Date non définie'}</p>
-                <p style="margin: 0; color: #888;">📍 ${event.location || 'Lieu non défini'}</p>
-                <p style="margin: 0; color: #007bff;">👥 ${event.participantCount} participant${event.participantCount > 1 ? 's' : ''}</p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #6c757d;">
+                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                  </svg>
+                  <span>${event.date ? new Date(event.date).toLocaleDateString('fr-FR') : 'Date non définie'}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; color: #6c757d;">
+                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                  <span>${event.location || 'Lieu non défini'}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; color: #f4a261; font-weight: 600;">
+                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-7.5c0-.83-.67-1.5-1.5-1.5S6 9.67 6 10.5V11H4c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5z"/>
+                  </svg>
+                  <span>${event.participantCount} participant${event.participantCount > 1 ? 's' : ''}</span>
+                </div>
               </div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px;">
               <div style="display: flex; gap: 10px;">
-                <button onclick="editEvent('${event.id}')" style="padding: 8px 15px; background: #ffc107; color: #333; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                  ✏️ Modifier
+                <button onclick="editEvent('${event.id}')" style="padding: 10px 15px; background: #f4a261; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+                  Modifier
                 </button>
-                <button onclick="deleteEvent('${event.id}')" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                  🗑️ Supprimer
+                <button onclick="deleteEvent('${event.id}')" style="padding: 10px 15px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                  <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Supprimer
                 </button>
               </div>
-              <button onclick="viewEventParticipants('${event.id}')" style="padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;">
-                👥 Voir participants
+              <button onclick="viewEventParticipants('${event.id}')" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+                  <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-7.5c0-.83-.67-1.5-1.5-1.5S6 9.67 6 10.5V11H4c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5z"/>
+                </svg>
+                Voir participants
               </button>
             </div>
           </div>
-          <p style="margin: 0; color: #555; font-style: italic;">${event.description || 'Aucune description'}</p>
+          <p style="margin: 0; color: #6c757d; line-height: 1.5; font-style: italic;">
+            ${event.description || 'Aucune description'}
+          </p>
         </div>
       `).join('')}
     </div>
@@ -623,54 +1104,54 @@ function showEventForm(communityId, eventToEdit = null) {
   modal.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(0,0,0,0.5); display: flex; justify-content: center; 
-    align-items: center; z-index: 1000;
+    align-items: center; z-index: 1000; backdrop-filter: blur(5px);
   `;
   
   modal.innerHTML = `
-    <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
-      <h2 style="margin: 0 0 20px 0; color: #333;">
-        ${isEdit ? '✏️ Modifier l\'événement' : '📅 Créer un nouvel événement'}
+    <div style="background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; border-top: 4px solid #f4a261;">
+      <h2 style="margin: 0 0 25px 0; color: #2c3e50; font-size: 1.8rem; font-weight: 600;">
+        ${isEdit ? 'Modifier l\'événement' : 'Créer un nouvel événement'}
       </h2>
       
       <form id="event-form">
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Titre *</label>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Titre *</label>
           <input type="text" id="event-title" required 
-                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;"
+                 style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;"
                  value="${eventToEdit?.title || ''}" placeholder="Nom de l'événement">
         </div>
         
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Description</label>
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Description</label>
           <textarea id="event-description" rows="3"
-                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; resize: vertical;"
+                    style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; resize: vertical; font-size: 14px;"
                     placeholder="Description de l'événement">${eventToEdit?.description || ''}</textarea>
         </div>
         
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Date *</label>
-          <input type="date" id="event-date" required
-                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;"
-                 value="${eventToEdit?.date ? eventToEdit.date.split('T')[0] : ''}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Date *</label>
+            <input type="date" id="event-date" required
+                   style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;"
+                   value="${eventToEdit?.date ? eventToEdit.date.split('T')[0] : ''}">
+          </div>
+          
+          <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Lieu *</label>
+            <input type="text" id="event-location" required
+                   style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;"
+                   value="${eventToEdit?.location || ''}" placeholder="Adresse ou lieu">
+          </div>
         </div>
         
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333;">Lieu *</label>
-          <input type="text" id="event-location" required
-                 style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;"
-                 value="${eventToEdit?.location || ''}" placeholder="Adresse ou lieu de l'événement">
-        </div>
-        
-
-        
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;">
           <button type="button" onclick="closeEventModal()" 
-                  style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                  style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
             Annuler
           </button>
           <button type="submit"
-                  style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-            ${isEdit ? '✏️ Mettre à jour' : '📅 Créer l\'événement'}
+                  style="padding: 12px 24px; background: #f4a261; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+            ${isEdit ? 'Mettre à jour' : 'Créer l\'événement'}
           </button>
         </div>
       </form>
@@ -769,27 +1250,41 @@ function showParticipantsModal(participants, eventId) {
   modal.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(0,0,0,0.5); display: flex; justify-content: center; 
-    align-items: center; z-index: 1000;
+    align-items: center; z-index: 1000; backdrop-filter: blur(5px);
   `;
   
   modal.innerHTML = `
-    <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
-      <h2 style="margin: 0 0 20px 0; color: #333;">
-        👥 Participants à l'événement (${participants.length})
+    <div style="background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; border-top: 4px solid #6c757d;">
+      <h2 style="margin: 0 0 25px 0; color: #2c3e50; font-size: 1.8rem; font-weight: 600;">
+        Participants à l'événement (${participants.length})
       </h2>
       
       ${participants.length === 0 ? `
-        <div style="text-align: center; padding: 40px; color: #666;">
-          <p>Aucun participant pour le moment</p>
+        <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
+          <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="32" height="32" fill="#6c757d" viewBox="0 0 24 24">
+              <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-4h3v4h2v-7.5c0-.83-.67-1.5-1.5-1.5S6 9.67 6 10.5V11H4c-.83 0-1.5.67-1.5 1.5v5c0 .83.67 1.5 1.5 1.5z"/>
+            </svg>
+          </div>
+          <p style="margin: 0;">Aucun participant pour le moment</p>
         </div>
       ` : `
-        <div style="display: grid; gap: 15px; margin-bottom: 20px;">
+        <div style="display: grid; gap: 15px; margin-bottom: 30px;">
           ${participants.map(participant => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9;">
+            <div style="display: flex; align-items: center; gap: 15px; padding: 20px; border: 1px solid #e9ecef; border-radius: 10px; background: #f8f9fa;">
+              <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1.2rem;">
+                ${(participant.user_profiles?.full_name || participant.user_profiles?.email || 'U').charAt(0).toUpperCase()}
+              </div>
               <div>
-                <strong style="color: #333;">${participant.user_profiles?.full_name || participant.user_profiles?.email || 'Utilisateur'}</strong>
-                <div style="color: #666; font-size: 14px;">${participant.user_profiles?.email || 'Email non disponible'}</div>
-                <div style="color: #888; font-size: 12px;">Inscrit le : ${new Date(participant.registered_at).toLocaleDateString('fr-FR')}</div>
+                <div style="font-weight: 600; color: #2c3e50; font-size: 1.1rem; margin-bottom: 5px;">
+                  ${participant.user_profiles?.full_name || participant.user_profiles?.email || 'Utilisateur'}
+                </div>
+                <div style="color: #6c757d; font-size: 14px; margin-bottom: 3px;">
+                  ${participant.user_profiles?.email || 'Email non disponible'}
+                </div>
+                <div style="color: #adb5bd; font-size: 12px;">
+                  Inscrit le ${new Date(participant.registered_at).toLocaleDateString('fr-FR')}
+                </div>
               </div>
             </div>
           `).join('')}
@@ -798,7 +1293,7 @@ function showParticipantsModal(participants, eventId) {
       
       <div style="display: flex; justify-content: flex-end;">
         <button type="button" onclick="closeParticipantsModal()" 
-                style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
           Fermer
         </button>
       </div>
@@ -832,4 +1327,5 @@ window.deleteEvent = deleteEvent;
 window.removeMember = removeMember;
 window.viewEventParticipants = viewEventParticipants;
 window.closeEventModal = closeEventModal;
-window.closeParticipantsModal = closeParticipantsModal; 
+window.closeParticipantsModal = closeParticipantsModal;
+window.handleLogout = handleCommonLogout; 
