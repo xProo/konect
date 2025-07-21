@@ -1,13 +1,15 @@
 import { BrowserLink } from "../components/BrowserRouter.js";
-import { auth } from "../lib/supabase.js";
+import { auth, database } from "../lib/supabase.js";
 
 export default function HomePage() {
   // Initialiser l'affichage utilisateur après le rendu
   setTimeout(async () => {
     await updateUserDisplay();
+    await loadCommunities(); // Charger les communautés
     // Écouter les changements d'authentification
     auth.onAuthStateChange((event, session) => {
       updateUserDisplay();
+      loadCommunities(); // Recharger les communautés quand l'auth change
     });
   }, 100);
 
@@ -189,6 +191,7 @@ function createContent() {
       createSportsSection(),
       createMusicDanceSection(),
       createFeaturedSection(),
+      createCommunitiesSection(), // Nouvelle section pour les communautés
       createBannerSection()
     ]
   };
@@ -1529,6 +1532,248 @@ function createBannerSection() {
   };
 }
 
+// === SECTION COMMUNAUTÉS ===
+
+function createCommunitiesSection() {
+  return {
+    tag: "div",
+    attributes: [["class", "popular-near-events"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "header"]],
+        children: [
+          {
+            tag: "div",
+            attributes: [["class", "heading4"]],
+            children: ["🏘️ Découvrez les Communautés"]
+          },
+          {
+            tag: "div",
+            attributes: [["class", "view-all-button"]],
+            children: [
+              BrowserLink({
+                link: "/communities",
+                title: {
+                  tag: "div",
+                  attributes: [["class", "label"]],
+                  children: ["Gérer mes communautés"]
+                }
+              }),
+              {
+                tag: "img",
+                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        tag: "div",
+        attributes: [["id", "communities-container"], ["style", { minHeight: "200px" }]],
+        children: [
+          {
+            tag: "div",
+            attributes: [["style", { textAlign: "center", padding: "50px", color: "#666" }]],
+            children: ["Chargement des communautés..."]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+// Fonction pour charger les communautés
+async function loadCommunities() {
+  try {
+    const { data: communities, error } = await database.getCommunities();
+    
+    if (error) {
+      console.error('Erreur lors du chargement des communautés:', error);
+      return;
+    }
+
+    await displayCommunities(communities || []);
+  } catch (error) {
+    console.error('Erreur inattendue:', error);
+  }
+}
+
+// Fonction pour afficher les communautés
+async function displayCommunities(communities) {
+  const container = document.getElementById('communities-container');
+  if (!container) return;
+  
+  if (communities.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 50px; color: #666;">
+        <p>🏘️ Aucune communauté disponible pour le moment.</p>
+        <p><a href="/communities" style="color: #007bff; text-decoration: none;">Créez la première communauté !</a></p>
+      </div>
+    `;
+    return;
+  }
+
+  // Récupérer l'utilisateur actuel pour vérifier les appartenances
+  const { data: { user } } = await auth.getCurrentUser();
+  
+  // Vérifier les appartenances si l'utilisateur est connecté
+  let userMemberships = [];
+  if (user) {
+    try {
+      const { data: memberships } = await database.getUserMemberships(user.id);
+      userMemberships = memberships?.map(m => m.community_id) || [];
+    } catch (error) {
+      console.error('Erreur lors du chargement des appartenances:', error);
+    }
+  }
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; padding: 20px 0;">
+      ${communities.map(community => createCommunityCard(community, user, userMemberships)).join('')}
+    </div>
+  `;
+}
+
+// Fonction pour créer une carte de communauté
+function createCommunityCard(community, user, userMemberships) {
+  const isUserReferent = user && community.referent_id === user.id;
+  const isUserMember = user && userMemberships.includes(community.id);
+  
+  let actionButton = '';
+  if (!user) {
+    actionButton = `
+      <button onclick="navigateToLogin()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        Se connecter pour rejoindre
+      </button>
+    `;
+  } else if (isUserReferent) {
+    actionButton = `
+      <button onclick="viewDashboard('${community.id}')" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        📊 Dashboard
+      </button>
+    `;
+  } else if (isUserMember) {
+    actionButton = `
+      <button onclick="leaveCommunityFromHome('${community.id}')" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        Quitter
+      </button>
+    `;
+  } else {
+    actionButton = `
+      <button onclick="joinCommunityFromHome('${community.id}')" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        🤝 Rejoindre
+      </button>
+    `;
+  }
+
+  const imageHtml = community.image_url 
+    ? `<img src="${community.image_url}" alt="${community.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;" onerror="this.style.display='none'">` 
+    : '';
+
+  return `
+    <div style="
+      border: 1px solid #ddd; 
+      border-radius: 15px; 
+      padding: 20px; 
+      background: #fff; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'">
+      
+      ${imageHtml}
+      
+      <div style="margin-bottom: 10px;">
+        <span style="
+          background: #e9ecef; 
+          color: #6c757d; 
+          padding: 4px 8px; 
+          border-radius: 12px; 
+          font-size: 12px; 
+          font-weight: 600;
+          text-transform: uppercase;
+        ">${community.category}</span>
+      </div>
+      
+      <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px; font-weight: 600;">${community.name}</h3>
+      
+      <p style="margin: 0 0 10px 0; color: #666; font-size: 14px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+        ${community.description}
+      </p>
+      
+      <div style="display: flex; align-items: center; margin-bottom: 15px; color: #888; font-size: 14px;">
+        <span style="margin-right: 4px;">📍</span>
+        <span>${community.location}</span>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+        <div style="font-size: 12px; color: #999;">
+          Créée le ${new Date(community.created_at).toLocaleDateString('fr-FR')}
+        </div>
+        ${actionButton}
+      </div>
+    </div>
+  `;
+}
+
+// Fonction pour rejoindre une communauté depuis la page d'accueil
+async function joinCommunityFromHome(communityId) {
+  try {
+    const { data: { user } } = await auth.getCurrentUser();
+    
+    if (!user) {
+      alert('Vous devez être connecté pour rejoindre une communauté.');
+      return;
+    }
+
+    const { error } = await database.joinCommunity(user.id, communityId);
+    
+    if (error) {
+      alert(`Erreur lors de l'adhésion : ${error.message}`);
+    } else {
+      alert('Vous avez rejoint la communauté avec succès ! 🎉');
+      await loadCommunities(); // Recharger les communautés
+    }
+  } catch (error) {
+    alert(`Erreur inattendue : ${error.message}`);
+  }
+}
+
+// Fonction pour quitter une communauté depuis la page d'accueil
+async function leaveCommunityFromHome(communityId) {
+  if (!confirm('Êtes-vous sûr de vouloir quitter cette communauté ?')) {
+    return;
+  }
+
+  try {
+    const { data: { user } } = await auth.getCurrentUser();
+    
+    if (!user) {
+      alert('Erreur : utilisateur non connecté.');
+      return;
+    }
+
+    const { error } = await database.leaveCommunity(user.id, communityId);
+    
+    if (error) {
+      alert(`Erreur : ${error.message}`);
+    } else {
+      alert('Vous avez quitté la communauté.');
+      await loadCommunities(); // Recharger les communautés
+    }
+  } catch (error) {
+    alert(`Erreur inattendue : ${error.message}`);
+  }
+}
+
+// Fonction pour voir le dashboard d'une communauté
+function viewDashboard(communityId) {
+  window.history.pushState({}, '', `/community-dashboard?id=${communityId}`);
+  const popStateEvent = new PopStateEvent('popstate', { state: {} });
+  window.dispatchEvent(popStateEvent);
+}
+
 // Fonction pour mettre à jour l'affichage utilisateur dans la navbar
 async function updateUserDisplay() {
   const userDisplayArea = document.getElementById('user-display-area');
@@ -1600,5 +1845,8 @@ function navigateToLogin() {
   window.dispatchEvent(popStateEvent);
 }
 
-// Rendre la fonction disponible globalement
+// Rendre les fonctions disponibles globalement
 window.navigateToLogin = navigateToLogin;
+window.joinCommunityFromHome = joinCommunityFromHome;
+window.leaveCommunityFromHome = leaveCommunityFromHome;
+window.viewDashboard = viewDashboard;

@@ -9,11 +9,8 @@ export const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON
 
 export const auth = {
 
-  async signUp(email, password) {
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    })
+  async signUp(userData) {
+    const { data, error } = await supabase.auth.signUp(userData)
     return { data, error }
   },
 

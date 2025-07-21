@@ -5,6 +5,7 @@ export default function CommunityManagePage() {
   // Initialiser la page après le rendu
   setTimeout(async () => {
     await loadUserCommunities();
+    await updateUserDisplay(); // Mettre à jour l'affichage utilisateur dans la navbar
     // Écouter les changements d'authentification
     auth.onAuthStateChange((event, session) => {
       if (session) {
@@ -15,25 +16,18 @@ export default function CommunityManagePage() {
         const popStateEvent = new PopStateEvent('popstate', { state: {} });
         window.dispatchEvent(popStateEvent);
       }
+      updateUserDisplay(); // Mettre à jour l'affichage utilisateur
     });
   }, 100);
 
   return {
     tag: "div",
-    attributes: [["style", { padding: "20px", maxWidth: "1200px", margin: "0 auto" }]],
     children: [
-      // Navigation
+      createNavbar(),
       {
-        tag: "nav",
-        attributes: [["style", { marginBottom: "30px", padding: "15px", backgroundColor: "#f8f9fa", borderRadius: "5px", textAlign: "center" }]],
+        tag: "div",
+        attributes: [["style", { padding: "20px", maxWidth: "1200px", margin: "0 auto" }]],
         children: [
-          BrowserLink({ link: "/", title: "Accueil" }),
-          " | ",
-          BrowserLink({ link: "/communities", title: "Mes Communautés" }),
-          " | ",
-          BrowserLink({ link: "/connexion", title: "Connexion" })
-        ]
-      },
 
       // Titre principal
       {
@@ -240,8 +234,252 @@ export default function CommunityManagePage() {
           }
         ]
       }
+        ]
+      }
     ]
   };
+}
+
+// Fonction pour créer la navbar (identique à HomePage)
+function createNavbar() {
+  return {
+    tag: "div",
+    attributes: [["class", "navbar-desktop"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "container"]],
+        children: [
+          // Logo
+          {
+            tag: "div",
+            attributes: [["class", "logo"]],
+            children: [
+              {
+                tag: "img",
+                attributes: [["class", "icon"], ["alt", ""], ["src", "images/logo.svg"]]
+              },
+              {
+                tag: "div",
+                attributes: [["class", "konect"]],
+                children: ["Qonect"]
+              }
+            ]
+          },
+          
+          // Navigation
+          {
+            tag: "div",
+            attributes: [["class", "navigation"]],
+            children: [
+              {
+                tag: "div",
+                attributes: [["class", "dropdown-separated"]],
+                children: [
+                  {
+                    tag: "img",
+                    attributes: [["class", "map-pin-icon"], ["alt", ""], ["src", "images/Icon_location.svg"]]
+                  },
+                  {
+                    tag: "div",
+                    attributes: [["class", "label"]],
+                    children: ["Paris"]
+                  },
+                  {
+                    tag: "img",
+                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
+                  },
+                  {
+                    tag: "div",
+                    attributes: [["class", "divider"]],
+                    children: [
+                      {
+                        tag: "div",
+                        attributes: [["class", "divider1"]],
+                        children: []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                tag: "div",
+                attributes: [["class", "dropdown"]],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["class", "label"]],
+                    children: ["Evenement"]
+                  },
+                  {
+                    tag: "img",
+                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
+                  }
+                ]
+              },
+              BrowserLink({
+                link: "/",
+                title: {
+                  tag: "div",
+                  attributes: [["class", "nav-link"]],
+                  children: [
+                    {
+                      tag: "div",
+                      attributes: [["class", "label"]],
+                      children: ["Accueil"]
+                    }
+                  ]
+                }
+              }),
+              BrowserLink({
+                link: "/communities",
+                title: {
+                  tag: "div",
+                  attributes: [["class", "nav-link"]],
+                  children: [
+                    {
+                      tag: "div",
+                      attributes: [["class", "label"]],
+                      children: ["Mes Communautés"]
+                    }
+                  ]
+                }
+              }),
+              {
+                tag: "div",
+                attributes: [["class", "nav-link"]],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["class", "label"]],
+                    children: ["Billeterie"]
+                  }
+                ]
+              },
+              {
+                tag: "div",
+                attributes: [["class", "dropdown"]],
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["class", "label"]],
+                    children: ["Centre d'aide"]
+                  },
+                  {
+                    tag: "img",
+                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
+                  }
+                ]
+              }
+            ]
+          },
+          
+          // Buttons
+          {
+            tag: "div",
+            attributes: [["class", "buttons"]],
+            children: [
+              {
+                tag: "div",
+                attributes: [["class", "button-group"], ["id", "user-display-area"]],
+                children: [
+                  BrowserLink({
+                    link: "/connexion",
+                    title: {
+                      tag: "div",
+                      attributes: [["class", "dark-button"]],
+                      children: [
+                        {
+                          tag: "img",
+                          attributes: [["class", "map-pin-icon"], ["alt", ""], ["src", "images/Icon.svg"]]
+                        },
+                        {
+                          tag: "div",
+                          attributes: [["class", "label5"]],
+                          children: ["Connexion"]
+                        }
+                      ]
+                    }
+                  })
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+// Fonction pour mettre à jour l'affichage utilisateur dans la navbar
+async function updateUserDisplay() {
+  const userDisplayArea = document.getElementById('user-display-area');
+  if (!userDisplayArea) return;
+  
+  try {
+    const { data: { user } } = await auth.getCurrentUser();
+    
+    if (user) {
+      // Utilisateur connecté - afficher nom/prénom et bouton déconnexion
+      let displayName = user.email;
+      if (user.user_metadata && user.user_metadata.full_name) {
+        displayName = user.user_metadata.full_name;
+      } else if (user.user_metadata && user.user_metadata.prenom && user.user_metadata.nom) {
+        displayName = `${user.user_metadata.prenom} ${user.user_metadata.nom}`;
+      }
+      
+      userDisplayArea.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="text-align: right;">
+            <div style="font-weight: 600; color: #333; font-size: 14px;"> ${displayName}</div>
+            <div style="font-size: 12px; color: #666;">${user.email}</div>
+          </div>
+          <button id="logout-btn" class="dark-button" style="padding: 8px 16px; font-size: 14px;">
+            Déconnexion
+          </button>
+        </div>
+      `;
+      
+      // Ajouter l'événement de déconnexion
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+          await handleLogout();
+        });
+      }
+      
+    } else {
+      // Utilisateur non connecté - afficher bouton connexion
+      userDisplayArea.innerHTML = `
+        <div class="dark-button" style="cursor: pointer;" onclick="navigateToLogin()">
+          <img class="map-pin-icon" alt="" src="images/Icon.svg" />
+          <div class="label5">Connexion</div>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('Erreur lors de la vérification de l\'utilisateur:', error);
+  }
+}
+
+async function handleLogout() {
+  try {
+    const { error } = await auth.signOut();
+    if (error) {
+      console.error('Erreur de déconnexion:', error);
+    } else {
+      // Rafraîchir l'affichage
+      await updateUserDisplay();
+    }
+  } catch (error) {
+    console.error('Erreur inattendue:', error);
+  }
+}
+
+function navigateToLogin() {
+  window.history.pushState({}, '', '/connexion');
+  const popStateEvent = new PopStateEvent('popstate', { state: {} });
+  window.dispatchEvent(popStateEvent);
 }
 
 // === FONCTIONS ===
@@ -422,4 +660,5 @@ function showMessage(message, type) {
 // Rendre les fonctions disponibles globalement
 window.editCommunity = editCommunity;
 window.deleteCommunity = deleteCommunity;
-window.viewDashboard = viewDashboard; 
+window.viewDashboard = viewDashboard;
+window.navigateToLogin = navigateToLogin; 
