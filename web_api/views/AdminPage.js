@@ -1058,7 +1058,7 @@ function editUser(userId) {
 }
 
 async function deleteUser(userId) {
-  if (!confirm('Êtes-vous sûr de vouloir désactiver cet utilisateur ?')) {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ?\n\nCette action est irréversible et supprimera :\n- Le profil utilisateur\n- Ses inscriptions aux événements\n- Ses appartenances aux communautés\n- Les communautés dont il est référent')) {
     return;
   }
 
@@ -1068,7 +1068,7 @@ async function deleteUser(userId) {
     if (error) {
       showMessage(`Erreur : ${error.message}`, 'error');
     } else {
-      showMessage('Utilisateur désactivé avec succès', 'success');
+      showMessage('Utilisateur supprimé définitivement avec succès', 'success');
       await loadUsers();
       await loadStats();
     }
@@ -1353,8 +1353,140 @@ async function searchEvents() {
   }
 }
 
-function viewEventParticipants(eventId) {
-  showMessage('Fonctionnalité de visualisation des participants à venir...', 'info');
+async function viewEventParticipants(eventId) {
+  try {
+    const { data: participants, error } = await admin.getEventParticipantsAdmin(eventId);
+    
+    if (error) {
+      showMessage(`Erreur lors du chargement des participants : ${error.message}`, 'error');
+      return;
+    }
+    
+    showParticipantsModal(participants || [], eventId);
+    
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
+}
+
+function showParticipantsModal(participants, eventId) {
+  const modalId = 'participants-modal';
+  
+  // Supprimer le modal existant s'il y en a un
+  const existingModal = document.getElementById(modalId);
+  if (existingModal) {
+    existingModal.remove();
+  }
+  
+  const modal = document.createElement('div');
+  modal.id = modalId;
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); display: flex; justify-content: center; 
+    align-items: center; z-index: 1000; backdrop-filter: blur(5px);
+  `;
+  
+  modal.innerHTML = `
+    <div style="background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 700px; max-height: 80vh; overflow-y: auto; border-top: 4px solid #e76f51;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h2 style="margin: 0; color: #2c3e50; font-size: 1.8rem; font-weight: 600;">
+          Participants à l'événement (${participants.length})
+        </h2>
+        <button onclick="closeParticipantsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; padding: 5px;">
+          ×
+        </button>
+      </div>
+      
+      ${participants.length === 0 ? `
+        <div style="text-align: center; padding: 60px 20px; color: #6c757d;">
+          <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #f8f9fa; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <svg width="32" height="32" fill="#6c757d" viewBox="0 0 24 24">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+          </div>
+          <h3 style="color: #2c3e50; margin-bottom: 10px; font-weight: 600;">Aucun participant</h3>
+          <p style="margin: 0; color: #6c757d;">Personne ne s'est encore inscrit à cet événement.</p>
+        </div>
+      ` : `
+        <div style="display: grid; gap: 15px;">
+          ${participants.map(participant => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border: 1px solid #e9ecef; border-radius: 10px; background: #f8f9fa;">
+              <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #e76f51 0%, #f4a261 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1.2rem;">
+                  ${(participant.user_profiles?.full_name || participant.user_profiles?.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style="font-weight: 600; color: #2c3e50; font-size: 1.1rem; margin-bottom: 5px;">
+                    ${participant.user_profiles?.full_name || participant.user_profiles?.email || 'Utilisateur inconnu'}
+                  </div>
+                  <div style="color: #6c757d; font-size: 14px; margin-bottom: 3px;">
+                    ${participant.user_profiles?.email || 'Email non disponible'}
+                  </div>
+                  <div style="color: #adb5bd; font-size: 12px;">
+                    Inscrit le ${new Date(participant.registered_at).toLocaleDateString('fr-FR')}
+                    ${participant.status === 'confirmed' ? 
+                      '<span style="color: #28a745; margin-left: 8px;">✓ Confirmé</span>' : 
+                      '<span style="color: #ffc107; margin-left: 8px;">⏳ En attente</span>'
+                    }
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button onclick="removeParticipantAdmin('${eventId}', '${participant.user_id}')" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                  <svg width="14" height="14" fill="white" viewBox="0 0 24 24">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                  Retirer
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+      
+      <div style="margin-top: 30px; text-align: center;">
+        <button onclick="closeParticipantsModal()" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+          Fermer
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Fermer le modal en cliquant à l'extérieur
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeParticipantsModal();
+    }
+  });
+}
+
+function closeParticipantsModal() {
+  const modal = document.getElementById('participants-modal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+async function removeParticipantAdmin(eventId, userId) {
+  if (!confirm('Êtes-vous sûr de vouloir retirer ce participant de l\'événement ?')) {
+    return;
+  }
+
+  try {
+    const { error } = await admin.removeEventParticipant(eventId, userId);
+    
+    if (error) {
+      showMessage(`Erreur lors de la suppression : ${error.message}`, 'error');
+    } else {
+      showMessage('Participant retiré avec succès', 'success');
+      // Recharger les participants
+      await viewEventParticipants(eventId);
+    }
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
 }
 
 async function deleteEvent(eventId) {
@@ -1415,4 +1547,6 @@ window.editCommunity = editCommunity;
 window.deleteCommunity = deleteCommunity;
 window.viewEventParticipants = viewEventParticipants;
 window.deleteEvent = deleteEvent;
+window.closeParticipantsModal = closeParticipantsModal;
+window.removeParticipantAdmin = removeParticipantAdmin;
 window.handleLogout = handleCommonLogout; 

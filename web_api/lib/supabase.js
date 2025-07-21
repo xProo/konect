@@ -540,13 +540,29 @@ export const admin = {
     return { data, error };
   },
 
-  // Supprimer un utilisateur (désactiver plutôt que supprimer)
+  // Supprimer un utilisateur (supprimer complètement)
   async deleteUser(userId) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .update({ is_active: false })
-      .eq('id', userId);
-    return { data, error };
+    try {
+      // D'abord supprimer les données liées pour éviter les erreurs de contrainte
+      await Promise.all([
+        // Supprimer les inscriptions aux événements
+        supabase.from('event_registrations').delete().eq('user_id', userId).then(() => {}),
+        // Supprimer les appartenances aux communautés
+        supabase.from('community_members').delete().eq('user_id', userId).then(() => {}),
+        // Supprimer les communautés dont l'utilisateur est référent
+        supabase.from('communities').delete().eq('referent_id', userId).then(() => {})
+      ]);
+
+      // Ensuite supprimer le profil utilisateur
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', userId);
+      
+      return { data, error };
+    } catch (error) {
+      return { data: null, error };
+    }
   },
 
   // Promouvoir/rétrograder admin
@@ -708,17 +724,61 @@ export const admin = {
   // Obtenir les participants d'un événement
   async getEventParticipantsAdmin(eventId) {
     try {
-      const { data, error } = await supabase
+      // Récupérer d'abord les inscriptions
+      const { data: registrations, error: regError } = await supabase
         .from('event_registrations')
-        .select(`
-          *,
-          user_profiles (*),
-          events (*)
-        `)
+        .select('*')
         .eq('event_id', eventId);
-      return { data, error };
+      
+      if (regError) {
+        return { data: [], error: regError };
+      }
+      
+      if (!registrations || registrations.length === 0) {
+        return { data: [], error: null };
+      }
+      
+      // Récupérer les profils des participants
+      const userIds = registrations.map(reg => reg.user_id).filter(Boolean);
+      
+      if (userIds.length === 0) {
+        return { data: [], error: null };
+      }
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        return { data: [], error: profilesError };
+      }
+      
+      // Récupérer les informations de l'événement
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+      
+      // Combiner les données
+      const participantsWithProfiles = registrations.map(registration => {
+        const profile = profiles?.find(p => p.id === registration.user_id);
+        return {
+          ...registration,
+          user_profiles: profile || {
+            id: registration.user_id,
+            email: 'Email non disponible',
+            full_name: 'Utilisateur inconnu'
+          },
+          events: event || null
+        };
+      });
+      
+      return { data: participantsWithProfiles, error: null };
+      
     } catch (error) {
-      return { data: [], error: null };
+      return { data: [], error };
     }
   },
 
