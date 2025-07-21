@@ -11,11 +11,11 @@ export default function AuthPage() {
         tag: "nav",
         attributes: [["style", { marginBottom: "20px", padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "5px" }]],
         children: [
-          BrowserLink({ link: "/auth", title: "Authentification" }),
+          HashLink({ link: "/auth", title: "Authentification" }),
           " | ",
-          BrowserLink({ link: "/home", title: "Accueil" }),
+          HashLink({ link: "/home", title: "Accueil" }),
           " | ",
-          BrowserLink({ link: "/gallery", title: "Galerie" })
+          HashLink({ link: "/gallery", title: "Galerie" })
         ]
       },
       
