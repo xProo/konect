@@ -1,12 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <script type="module" defer src="./index.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width" />
+
+    <link rel="stylesheet" href="./index.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
   </head>
   <body>
-    <div id="root"></div>
+    <div class="navbar-desktop">
+      <div class="container">
+        <div class="logo">
+          <img class="icon" alt="" src="images/logo.svg" />
+          <div class="konect">Qonect</div>
+        </div>
+        <div class="navigation">
+          <div class="dropdown-separated">
+            <img class="map-pin-icon" alt="" src="images/Icon_location.svg" />
+            <div class="label">Paris</div>
+            <img class="chevron-icon" alt="" src="images/Arrow.svg" />
+            <div class="divider">
+              <div class="divider1"></div>
+            </div>
+          </div>
+          <div class="dropdown">
+            <div class="label">Evenement</div>
+            <img class="chevron-icon" alt="" src="images/Arrow.svg" />
+          </div>
+          <div class="dropdown">
+            <div class="label">Cummunautés</div>
+            <img class="chevron-icon" alt="" src="images/Arrow.svg" />
+          </div>
+          <div class="nav-link">
+            <div class="label">Billeterie</div>
+          </div>
+          <div class="dropdown">
+            <div class="label">Centre d'aide</div>
+            <img class="chevron-icon" alt="" src="images/Arrow.svg" />
+          </div>
+        </div>
+        <div class="buttons">
+          <div class="button-group">
+            <div class="dark-button">
+              <img class="map-pin-icon" alt="" src="images/Icon.svg" />
+              <div class="label5">Connexion</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="search-form-hero">
+        <div class="slider-background">
+          <div class="prev-next-buttons">
+            <div class="secondary-button">
+              <img class="icon" alt="" src="images/Icon_location.svg" />
+            </div>
+            <div class="secondary-button">
+              <img class="icon" alt="" src="images/Icon_location.svg" />
+            </div>
+          </div>
+          <div class="text">
+            <b class="title">Découvrez des événements près de chez vous</b>
+          </div>
+          <div class="text1">
+            Un seul endroit pour tous vos billets d'événements
+          </div>
+          <div class="event">
+            <img class="image-icon" alt="" src="images/image_header.jpg" />
+
+            <div class="ticket">
+              <img class="shape-icon" alt="" src="images/shape.svg" />
+
+              <img class="divider-icon" alt="" src="images/divider.svg" />
+
+              <div class="text2">
+                <div class="jusqu">Jusqu'à</div>
+                <div class="div">€56</div>
+              </div>
+              <img class="star-icon" alt="" src="images/star.svg" />
+            </div>
+          </div>
+        </div>
+        <div class="search-form">
+          <div class="input">
+            <img class="arrow-icon" alt="" src="images/Icon.svg" />
+
+            <div class="placeholder">Recherche par événement ou communauté</div>
+          </div>
+          <div class="select">
+            <img class="arrow-icon" alt="" src="images/Icon_location.svg" />
+
+            <div class="placeholder">Lieu</div>
+            <img class="arrow-icon" alt="" src="images/Arrow.svg" />
+          </div>
+          <div class="primary-button">
+            <div class="label">Recherche</div>
+          </div>
+        </div>
+      </div>
+      <div class="categories">
+        <div class="column">
+          <div class="events-category-card">
+            <img class="microphone-icon" alt="" src="images/microphone.svg" />
+
+            <div class="text3">Concerts</div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="events-category-card">
+            <img class="microphone-icon" alt="" src="images/basketball.svg" />
+
+            <div class="text3">Sports</div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="events-category-card">
+            <img class="microphone-icon" alt="" src="images/target.svg" />
+
+            <div class="text3">Loisirs</div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="events-category-card">
+            <img class="microphone-icon" alt="" src="images/mirror-ball.svg" />
+
+            <div class="text3">Disco</div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="events-category-card">
+            <img
+              class="microphone-icon"
+              alt=""
+              src="images/press-conference.svg"
+            />
+
+            <div class="text3">Conference</div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="events-category-card">
+            <img class="microphone-icon" alt="" src="images/drama.svg" />
+
+            <div class="text3">Cinema</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
