@@ -9,7 +9,7 @@ export default function generateStructure(structure) {
       const attrName = attribute[0];
       const attrValue = attribute[1];
       if (attrName === "style") {
-        Object.assign(elem.style, attrValue);
+        elem.style.cssText = attrValue;
       } else if (attrName === "class") {
         elem.className = attrValue;
       } else {
