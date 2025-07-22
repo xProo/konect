@@ -26,7 +26,7 @@ export function createCommonNavbar() {
               }
             ]
           },
-          
+
           // Navigation
           {
             tag: "div",
@@ -110,17 +110,17 @@ export function createCommonNavbar() {
                   })
                 ]
               },
-            //   {
-            //     tag: "div",
-            //     attributes: [["class", "nav-link"]],
-            //     children: [
-            //       {
-            //         tag: "div",
-            //         attributes: [["class", "label"]],
-            //         children: ["Billeterie"]
-            //       }
-            //     ]
-            //   },
+              //   {
+              //     tag: "div",
+              //     attributes: [["class", "nav-link"]],
+              //     children: [
+              //       {
+              //         tag: "div",
+              //         attributes: [["class", "label"]],
+              //         children: ["Billeterie"]
+              //       }
+              //     ]
+              //   },
               {
                 tag: "div",
                 attributes: [["class", "dropdown"]],
@@ -138,7 +138,7 @@ export function createCommonNavbar() {
               }
             ]
           },
-          
+
           // Buttons
           {
             tag: "div",
@@ -166,10 +166,9 @@ export function createCommonNavbar() {
 export async function updateCommonUserDisplay() {
   const { data: { user } } = await auth.getCurrentUser();
   const userDisplay = document.getElementById('user-display');
-  
+
   if (!userDisplay) return;
 
-  // Vérifier si l'utilisateur est admin et afficher le lien admin
   await updateAdminNavLink(user);
 
   if (user) {
@@ -183,6 +182,9 @@ export async function updateCommonUserDisplay() {
     userDisplay.innerHTML = `
       <div style="display: flex; align-items: center; gap: 15px;">
         <span style="color: #28a745; font-weight: bold;"> ${displayName}</span>
+        <a href="/profile" style="text-decoration: none; padding: 8px 15px; background: #6c757d; color: white; border-radius: 5px; cursor: pointer; font-size: 14px;">
+          👤 Profil
+        </a>
         <button onclick="handleLogout()" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
           🚪 Déconnexion
         </button>
@@ -191,10 +193,10 @@ export async function updateCommonUserDisplay() {
   } else {
     userDisplay.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px;">
-        <a href="/connexion" style="text-decoration: none; padding: 8px 15px; background: #007bff; color: white; border-radius: 5px; font-weight: bold;">
+        <a href="#/connexion" style="text-decoration: none; padding: 8px 15px; background: #007bff; color: white; border-radius: 5px; font-weight: bold;">
           🔐 Se connecter
         </a>
-        <a href="/inscription" style="text-decoration: none; padding: 8px 15px; background: #28a745; color: white; border-radius: 5px; font-weight: bold;">
+        <a href="#/inscription" style="text-decoration: none; padding: 8px 15px; background: #28a745; color: white; border-radius: 5px; font-weight: bold;">
           ✍️ S'inscrire
         </a>
       </div>
@@ -214,7 +216,7 @@ export async function handleCommonLogout() {
 
 async function updateAdminNavLink(user) {
   const adminNavLink = document.getElementById('admin-nav-link');
-  
+
   if (!adminNavLink) return;
 
   if (user) {

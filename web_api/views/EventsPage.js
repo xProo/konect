@@ -153,7 +153,7 @@ export default function EventsPage() {
             children: [
               {
                 tag: "div",
-                attributes: [["style", { textAlign: "center", padding: "50px", color: "#666" }]],
+                attributes: [["style", { textAlign: "center", padding: "50px", color: "#666",  }]],
                 children: ["Chargement des événements..."]
               }
             ]
@@ -204,7 +204,7 @@ async function displayEvents(events) {
   if (events.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 50px; color: #666;">
-        <h3>😔 Aucun événement trouvé</h3>
+        <h3>Aucun événement trouvé</h3>
         <p>Il n'y a pas d'événements publics pour le moment.</p>
       </div>
     `;

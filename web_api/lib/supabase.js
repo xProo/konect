@@ -11,7 +11,7 @@ export const auth = {
 
   async signUp(userData) {
     const { data, error } = await supabase.auth.signUp(userData)
-    
+
     // Si l'inscription réussit, créer le profil utilisateur
     if (!error && data.user) {
       try {
@@ -29,11 +29,11 @@ export const auth = {
         // On ne fait pas échouer l'inscription pour autant
       }
     }
-    
+
     return { data, error }
   },
 
-  
+
   async signIn(email, password) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
@@ -48,11 +48,27 @@ export const auth = {
     return { error }
   },
 
+  async updatePassword(newPassword) {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        console.error('Erreur lors du changement de mot de passe:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erreur lors du changement de mot de passe:', error);
+      return false;
+    }
+  },
 
   getCurrentUser() {
     return supabase.auth.getUser()
   },
-
 
   onAuthStateChange(callback) {
     return supabase.auth.onAuthStateChange(callback)
@@ -139,7 +155,7 @@ export const database = {
   },
 
   // === GESTION DES COMMUNAUTÉS ===
-  
+
   // Créer une communauté
   async createCommunity(communityData) {
     const { data, error } = await supabase
@@ -229,22 +245,22 @@ export const database = {
         .from('community_members')
         .select('*')
         .eq('community_id', communityId)
-      
+
       if (membersError) return { data: null, error: membersError }
-      
+
       if (!members || members.length === 0) {
         return { data: [], error: null }
       }
-      
+
       // Récupérer les profils des utilisateurs
       const userIds = members.map(member => member.user_id)
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', userIds)
-      
+
       if (profilesError) return { data: null, error: profilesError }
-      
+
       // Combiner les données
       const membersWithProfiles = members.map(member => {
         const profile = profiles?.find(p => p.id === member.user_id)
@@ -259,9 +275,9 @@ export const database = {
           }
         }
       })
-      
+
       return { data: membersWithProfiles, error: null }
-      
+
     } catch (error) {
       return { data: null, error }
     }
@@ -341,12 +357,12 @@ export const database = {
       location: eventData.location,
       community_id: eventData.community_id
     };
-    
+
     // Ajouter image_url seulement si elle existe
     if (eventData.image_url !== undefined) {
       baseData.image_url = eventData.image_url;
     }
-    
+
     const { data, error } = await supabase
       .from('events')
       .insert([baseData])
@@ -358,14 +374,14 @@ export const database = {
   async updateEvent(eventId, updates) {
     // Préparer les données de mise à jour
     const baseUpdates = {};
-    
+
     // Copier tous les champs sauf image_url si elle est undefined
     Object.keys(updates).forEach(key => {
       if (key !== 'image_url' || updates[key] !== undefined) {
         baseUpdates[key] = updates[key];
       }
     });
-    
+
     const { data, error } = await supabase
       .from('events')
       .update(baseUpdates)
@@ -422,12 +438,12 @@ export const database = {
         .eq('user_id', userId)
         .eq('event_id', eventId)
         .limit(1)
-      
+
       if (error) {
         // Si la table n'existe pas, retourner false
         return { data: false, error: null }
       }
-      
+
       return { data: data && data.length > 0, error }
     } catch (error) {
       return { data: false, error: null }
@@ -443,25 +459,25 @@ export const database = {
         .select('*')
         .eq('event_id', eventId)
         .eq('status', 'confirmed')
-      
+
       if (regError) {
         // Si la table n'existe pas encore, retourner une liste vide
         return { data: [], error: null }
       }
-      
+
       if (!registrations || registrations.length === 0) {
         return { data: [], error: null }
       }
-      
+
       // Récupérer les profils des participants
       const userIds = registrations.map(reg => reg.user_id)
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', userIds)
-      
+
       if (profilesError) return { data: null, error: profilesError }
-      
+
       // Combiner les données
       const participantsWithProfiles = registrations.map(registration => {
         const profile = profiles?.find(p => p.id === registration.user_id)
@@ -476,9 +492,9 @@ export const database = {
           }
         }
       })
-      
+
       return { data: participantsWithProfiles, error: null }
-      
+
     } catch (error) {
       return { data: null, error }
     }
@@ -506,6 +522,78 @@ export const database = {
       .eq('user_id', userId)
       .eq('status', 'confirmed')
     return { data, error }
+  },
+
+  // === GESTION DES PROFILS UTILISATEUR ===
+
+  async getUserProfile(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de la récupération du profil:', error);
+      return null;
+    }
+  },
+
+  async createUserProfile(profileData) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert([{
+          id: profileData.id,
+          email: profileData.email,
+          prenom: profileData.prenom || '',
+          nom: profileData.nom || '',
+          full_name: profileData.full_name || profileData.email,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de la création du profil:', error);
+      return null;
+    }
+  },
+
+  async updateUserProfile(userId, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update({
+          prenom: updates.prenom,
+          nom: updates.nom,
+          full_name: updates.full_name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
+      return null;
+    }
   }
 }
 
@@ -516,13 +604,13 @@ export const admin = {
     try {
       const { data: { user } } = await auth.getCurrentUser();
       if (!user) return false;
-      
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('is_admin')
         .eq('id', user.id)
         .single();
-      
+
       return data?.is_admin || false;
     } catch (error) {
       return false;
@@ -606,11 +694,11 @@ export const admin = {
       // D'abord supprimer les données liées pour éviter les erreurs de contrainte
       await Promise.all([
         // Supprimer les inscriptions aux événements
-        supabase.from('event_registrations').delete().eq('user_id', userId).then(() => {}),
+        supabase.from('event_registrations').delete().eq('user_id', userId).then(() => { }),
         // Supprimer les appartenances aux communautés
-        supabase.from('community_members').delete().eq('user_id', userId).then(() => {}),
+        supabase.from('community_members').delete().eq('user_id', userId).then(() => { }),
         // Supprimer les communautés dont l'utilisateur est référent
-        supabase.from('communities').delete().eq('referent_id', userId).then(() => {})
+        supabase.from('communities').delete().eq('referent_id', userId).then(() => { })
       ]);
 
       // Ensuite supprimer le profil utilisateur
@@ -618,7 +706,7 @@ export const admin = {
         .from('user_profiles')
         .delete()
         .eq('id', userId);
-      
+
       return { data, error };
     } catch (error) {
       return { data: null, error };
@@ -644,27 +732,27 @@ export const admin = {
         .from('communities')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (communitiesError) return { data: null, error: communitiesError };
-      
+
       if (!communities || communities.length === 0) {
         return { data: [], error: null };
       }
-      
+
       // Récupérer les profils des référents
       const referentIds = communities.map(c => c.referent_id).filter(Boolean);
-      
+
       if (referentIds.length === 0) {
         return { data: communities.map(c => ({ ...c, user_profiles: null })), error: null };
       }
-      
+
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', referentIds);
-      
+
       if (profilesError) return { data: null, error: profilesError };
-      
+
       // Combiner les données
       const communitiesWithProfiles = communities.map(community => {
         const profile = profiles?.find(p => p.id === community.referent_id);
@@ -673,9 +761,9 @@ export const admin = {
           user_profiles: profile || null
         };
       });
-      
+
       return { data: communitiesWithProfiles, error: null };
-      
+
     } catch (error) {
       return { data: null, error };
     }
@@ -685,7 +773,7 @@ export const admin = {
   async validateCommunity(communityId, isValidated) {
     const { data, error } = await supabase
       .from('communities')
-      .update({ 
+      .update({
         is_validated: isValidated,
         validated_at: isValidated ? new Date().toISOString() : null
       })
@@ -727,29 +815,29 @@ export const admin = {
           communities (*)
         `)
         .order('created_at', { ascending: false });
-      
+
       if (eventsError) return { data: null, error: eventsError };
-      
+
       if (!events || events.length === 0) {
         return { data: [], error: null };
       }
-      
+
       // Récupérer les profils des référents des communautés
       const referentIds = events
         .map(e => e.communities?.referent_id)
         .filter(Boolean);
-      
+
       if (referentIds.length === 0) {
         return { data: events, error: null };
       }
-      
+
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', referentIds);
-      
+
       if (profilesError) return { data: null, error: profilesError };
-      
+
       // Combiner les données
       const eventsWithProfiles = events.map(event => {
         if (event.communities && event.communities.referent_id) {
@@ -764,9 +852,9 @@ export const admin = {
         }
         return event;
       });
-      
+
       return { data: eventsWithProfiles, error: null };
-      
+
     } catch (error) {
       return { data: null, error };
     }
@@ -789,38 +877,38 @@ export const admin = {
         .from('event_registrations')
         .select('*')
         .eq('event_id', eventId);
-      
+
       if (regError) {
         return { data: [], error: regError };
       }
-      
+
       if (!registrations || registrations.length === 0) {
         return { data: [], error: null };
       }
-      
+
       // Récupérer les profils des participants
       const userIds = registrations.map(reg => reg.user_id).filter(Boolean);
-      
+
       if (userIds.length === 0) {
         return { data: [], error: null };
       }
-      
+
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', userIds);
-      
+
       if (profilesError) {
         return { data: [], error: profilesError };
       }
-      
+
       // Récupérer les informations de l'événement
       const { data: event, error: eventError } = await supabase
         .from('events')
         .select('*')
         .eq('id', eventId)
         .single();
-      
+
       // Combiner les données
       const participantsWithProfiles = registrations.map(registration => {
         const profile = profiles?.find(p => p.id === registration.user_id);
@@ -834,9 +922,9 @@ export const admin = {
           events: event || null
         };
       });
-      
+
       return { data: participantsWithProfiles, error: null };
-      
+
     } catch (error) {
       return { data: [], error };
     }
@@ -872,27 +960,27 @@ export const admin = {
         .select('*')
         .or(`name.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%,location.ilike.%${query}%`)
         .order('created_at', { ascending: false });
-      
+
       if (communitiesError) return { data: null, error: communitiesError };
-      
+
       if (!communities || communities.length === 0) {
         return { data: [], error: null };
       }
-      
+
       // Récupérer les profils des référents
       const referentIds = communities.map(c => c.referent_id).filter(Boolean);
-      
+
       if (referentIds.length === 0) {
         return { data: communities.map(c => ({ ...c, user_profiles: null })), error: null };
       }
-      
+
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', referentIds);
-      
+
       if (profilesError) return { data: null, error: profilesError };
-      
+
       // Combiner les données
       const communitiesWithProfiles = communities.map(community => {
         const profile = profiles?.find(p => p.id === community.referent_id);
@@ -901,9 +989,9 @@ export const admin = {
           user_profiles: profile || null
         };
       });
-      
+
       return { data: communitiesWithProfiles, error: null };
-      
+
     } catch (error) {
       return { data: null, error };
     }
@@ -921,29 +1009,29 @@ export const admin = {
         `)
         .or(`title.ilike.%${query}%,description.ilike.%${query}%,location.ilike.%${query}%`)
         .order('created_at', { ascending: false });
-      
+
       if (eventsError) return { data: null, error: eventsError };
-      
+
       if (!events || events.length === 0) {
         return { data: [], error: null };
       }
-      
+
       // Récupérer les profils des référents des communautés
       const referentIds = events
         .map(e => e.communities?.referent_id)
         .filter(Boolean);
-      
+
       if (referentIds.length === 0) {
         return { data: events, error: null };
       }
-      
+
       const { data: profiles, error: profilesError } = await supabase
         .from('user_profiles')
         .select('*')
         .in('id', referentIds);
-      
+
       if (profilesError) return { data: null, error: profilesError };
-      
+
       // Combiner les données
       const eventsWithProfiles = events.map(event => {
         if (event.communities && event.communities.referent_id) {
@@ -958,9 +1046,9 @@ export const admin = {
         }
         return event;
       });
-      
+
       return { data: eventsWithProfiles, error: null };
-      
+
     } catch (error) {
       return { data: null, error };
     }
