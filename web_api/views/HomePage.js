@@ -1732,7 +1732,7 @@ async function joinCommunityFromHome(communityId) {
     if (error) {
       alert(`Erreur lors de l'adhésion : ${error.message}`);
     } else {
-      alert('Vous avez rejoint la communauté avec succès ! 🎉');
+      alert('Vous avez rejoint la communauté avec succès ! ');
       await loadCommunities(); // Recharger les communautés
     }
   } catch (error) {

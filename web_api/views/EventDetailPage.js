@@ -108,11 +108,6 @@ export default function EventDetailPage() {
                         children: [
                           {
                             tag: "div",
-                            attributes: [["style", { fontSize: "64px", marginBottom: "10px" }]],
-                            children: ["🎉"]
-                          },
-                          {
-                            tag: "div",
                             attributes: [["id", "event-image-title"], ["style", { fontSize: "24px", textAlign: "center", padding: "0 20px" }]],
                             children: ["Événement"]
                           }
@@ -428,7 +423,7 @@ function createNavbar() {
               }),
               BrowserLink({ 
                 link: "/events", 
-                title: "🎉 Événements",
+                title: "Événements",
                 style: "text-decoration: none; color: #28a745; font-size: 16px;"
               }),
               BrowserLink({ 
@@ -769,7 +764,7 @@ async function registerToEvent() {
     if (error) {
       showMessage(`Erreur lors de l'inscription : ${error.message}`, 'error');
     } else {
-      showMessage('Inscription réussie ! 🎉', 'success');
+      showMessage('Inscription réussie ! ', 'success');
       await loadParticipants();
       await updateActionButtons();
     }

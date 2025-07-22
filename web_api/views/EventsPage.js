@@ -31,7 +31,7 @@ export default function EventsPage() {
               {
                 tag: "h1",
                 attributes: [["style", { color: "#333", marginBottom: "10px", fontSize: "2.5rem" }]],
-                children: ["🎉 Événements Publics"]
+                children: ["Événements Publics"]
               },
               {
                 tag: "p",
@@ -358,7 +358,7 @@ async function registerToEvent(eventId) {
     if (error) {
       showMessage(`Erreur lors de l'inscription : ${error.message}`, 'error');
     } else {
-      showMessage('Inscription réussie ! 🎉', 'success');
+      showMessage('Inscription réussie ! ', 'success');
       await loadPublicEvents(); // Recharger pour mettre à jour les statuts
     }
   } catch (error) {

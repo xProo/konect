@@ -172,26 +172,6 @@ function createProfileContent() {
                   click: [handleSaveProfile]
                 },
                 children: ["💾 Sauvegarder"]
-              },
-              {
-                tag: "button",
-                attributes: [
-                  ["id", "cancel-profile-btn"],
-                  ["style", {
-                    flex: "0.5",
-                    padding: "12px 20px",
-                    backgroundColor: "#6c757d",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                    fontSize: "16px"
-                  }]
-                ],
-                events: {
-                  click: [handleCancelEdit]
-                },
-                children: ["↩️ Annuler"]
               }
             ]
           }
@@ -320,7 +300,7 @@ async function loadUserProfile() {
     const { data: { user } } = await auth.getCurrentUser();
     if (!user) {
       showMessage("Vous devez être connecté pour accéder à cette page", "error");
-      window.location.hash = "#/connexion";
+      window.location.hash = "/connexion";
       return;
     }
 

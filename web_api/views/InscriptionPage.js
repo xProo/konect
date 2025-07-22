@@ -325,7 +325,7 @@ async function handleSignUp() {
     if (error) {
       showMessage(`Erreur lors de l'inscription : ${error.message}`, 'error');
     } else {
-      showMessage('🎉 Inscription réussie ! Vérifiez votre email pour confirmer votre compte.', 'success');
+      showMessage('Inscription réussie ! Vérifiez votre email pour confirmer votre compte.', 'success');
       
       // Réinitialiser le formulaire
       document.getElementById('signupForm').reset();

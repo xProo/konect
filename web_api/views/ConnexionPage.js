@@ -267,7 +267,7 @@ async function handleSignIn() {
     if (error) {
       showMessage(`Erreur de connexion: ${error.message}`, 'error');
     } else {
-      showMessage('🎉 Connexion réussie ! Bienvenue !', 'success');
+      showMessage('Connexion réussie ! Bienvenue !', 'success');
       
       // Vider les champs
       document.getElementById('signin-email').value = '';
