@@ -59,6 +59,49 @@ export const auth = {
   }
 }
 
+// === GESTION DU STORAGE ===
+export const storage = {
+  // Upload d'une image d'événement
+  async uploadEventImage(file, eventId) {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `event_${eventId}_${Date.now()}.${fileExt}`
+      const filePath = `events/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('event-images')
+        .upload(filePath, file)
+
+      if (error) return { data: null, error }
+
+      // Obtenir l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('event-images')
+        .getPublicUrl(filePath)
+
+      return { data: { path: filePath, url: publicUrl }, error: null }
+    } catch (error) {
+      return { data: null, error }
+    }
+  },
+
+  // Supprimer une image d'événement
+  async deleteEventImage(imagePath) {
+    const { data, error } = await supabase.storage
+      .from('event-images')
+      .remove([imagePath])
+    return { data, error }
+  },
+
+  // Obtenir l'URL publique d'une image
+  getPublicUrl(imagePath) {
+    const { data } = supabase.storage
+      .from('event-images')
+      .getPublicUrl(imagePath)
+    return data.publicUrl
+  }
+}
+
 // Fonctions pour les données
 export const database = {
   // Récupérer les événements
@@ -290,25 +333,42 @@ export const database = {
 
   // Créer un événement
   async createEvent(eventData) {
-    // Version simplifiée qui utilise seulement les colonnes de base
+    // Préparer les données de base
+    const baseData = {
+      title: eventData.title,
+      description: eventData.description,
+      date: eventData.date,
+      location: eventData.location,
+      community_id: eventData.community_id
+    };
+    
+    // Ajouter image_url seulement si elle existe
+    if (eventData.image_url !== undefined) {
+      baseData.image_url = eventData.image_url;
+    }
+    
     const { data, error } = await supabase
       .from('events')
-      .insert([{
-        title: eventData.title,
-        description: eventData.description,
-        date: eventData.date,
-        location: eventData.location,
-        community_id: eventData.community_id
-      }])
+      .insert([baseData])
       .select()
     return { data, error }
   },
 
   // Modifier un événement
   async updateEvent(eventId, updates) {
+    // Préparer les données de mise à jour
+    const baseUpdates = {};
+    
+    // Copier tous les champs sauf image_url si elle est undefined
+    Object.keys(updates).forEach(key => {
+      if (key !== 'image_url' || updates[key] !== undefined) {
+        baseUpdates[key] = updates[key];
+      }
+    });
+    
     const { data, error } = await supabase
       .from('events')
-      .update(updates)
+      .update(baseUpdates)
       .eq('id', eventId)
       .select()
     return { data, error }

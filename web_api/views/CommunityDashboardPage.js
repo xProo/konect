@@ -1,4 +1,4 @@
-import { auth, database } from "../lib/supabase.js";
+import { auth, database, storage } from "../lib/supabase.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
 import { createCommonNavbar, updateCommonUserDisplay, handleCommonLogout } from "../components/CommonNavbar.js";
 
@@ -1128,6 +1128,20 @@ function showEventForm(communityId, eventToEdit = null) {
                     placeholder="Description de l'événement">${eventToEdit?.description || ''}</textarea>
         </div>
         
+                <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Image de l'événement</label>
+          <div style="display: flex; gap: 15px; align-items: start;">
+            <div style="flex: 1;">
+              <input type="file" id="event-image" accept="image/*"
+                     style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;">
+              <small style="color: #6c757d; font-size: 12px;">Formats acceptés: JPG, PNG, GIF (max 5MB)</small>
+            </div>
+            <div id="image-preview" style="width: 100px; height: 80px; border: 2px dashed #dee2e6; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; color: #6c757d; font-size: 12px; text-align: center;">
+              ${eventToEdit?.image_url ? `<img src="${eventToEdit.image_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">` : 'Aperçu'}
+            </div>
+          </div>
+        </div>
+        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
           <div>
             <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Date *</label>
@@ -1158,8 +1172,31 @@ function showEventForm(communityId, eventToEdit = null) {
     </div>
   `;
   
-  document.body.appendChild(modal);
+    document.body.appendChild(modal);
   
+  // Gérer la prévisualisation d'image
+  document.getElementById('event-image').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('image-preview');
+    
+    if (file) {
+      // Vérifier la taille (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        showMessage('L\'image ne doit pas dépasser 5MB', 'error');
+        e.target.value = '';
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;">`;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      preview.innerHTML = 'Aperçu';
+    }
+  });
+
   // Gérer la soumission du formulaire
   document.getElementById('event-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1184,6 +1221,13 @@ function closeEventModal() {
 async function handleEventSubmit(communityId, eventId = null) {
   const isEdit = !!eventId;
   
+  // Récupérer le bouton de soumission
+  const submitButton = document.querySelector('#event-form button[type="submit"]');
+  const originalButtonText = submitButton.innerHTML;
+  
+  // Activer l'état de chargement
+  setLoadingState(submitButton, true, isEdit);
+  
   const eventData = {
     title: document.getElementById('event-title').value.trim(),
     description: document.getElementById('event-description').value.trim(),
@@ -1192,9 +1236,28 @@ async function handleEventSubmit(communityId, eventId = null) {
     community_id: communityId
   };
   
+  // Gérer l'image sélectionnée
+  const imageFile = document.getElementById('event-image').files[0];
+  if (imageFile) {
+    try {
+      const reader = new FileReader();
+      const imageData = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
+      eventData.image_url = imageData;
+    } catch (error) {
+      showMessage('Erreur lors du traitement de l\'image', 'error');
+      setLoadingState(submitButton, false, isEdit, originalButtonText);
+      return;
+    }
+  }
+  
   // Validation
   if (!eventData.title || !eventData.date || !eventData.location) {
     showMessage('Veuillez remplir tous les champs obligatoires', 'error');
+    setLoadingState(submitButton, false, isEdit, originalButtonText);
     return;
   }
   
@@ -1208,6 +1271,7 @@ async function handleEventSubmit(communityId, eventId = null) {
     
     if (result.error) {
       showMessage(`Erreur lors de ${isEdit ? 'la modification' : 'la création'} : ${result.error.message}`, 'error');
+      setLoadingState(submitButton, false, isEdit, originalButtonText);
     } else {
       showMessage(`Événement ${isEdit ? 'modifié' : 'créé'} avec succès !`, 'success');
       closeEventModal();
@@ -1217,6 +1281,47 @@ async function handleEventSubmit(communityId, eventId = null) {
     }
   } catch (error) {
     showMessage(`Erreur inattendue : ${error.message}`, 'error');
+    setLoadingState(submitButton, false, isEdit, originalButtonText);
+  }
+}
+
+// Fonction pour gérer l'état de chargement du bouton
+function setLoadingState(button, isLoading, isEdit, originalText = null) {
+  if (isLoading) {
+    button.disabled = true;
+    button.style.opacity = '0.7';
+    button.style.cursor = 'not-allowed';
+    button.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <div class="spinner" style="
+          width: 16px; 
+          height: 16px; 
+          border: 2px solid transparent; 
+          border-top: 2px solid white; 
+          border-radius: 50%; 
+          animation: spin 1s linear infinite;
+        "></div>
+        ${isEdit ? 'Mise à jour...' : 'Création...'}
+      </div>
+    `;
+    
+    // Ajouter l'animation CSS si elle n'existe pas déjà
+    if (!document.getElementById('spinner-animation')) {
+      const style = document.createElement('style');
+      style.id = 'spinner-animation';
+      style.textContent = `
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  } else {
+    button.disabled = false;
+    button.style.opacity = '1';
+    button.style.cursor = 'pointer';
+    button.innerHTML = originalText || (isEdit ? 'Mettre à jour' : 'Créer l\'événement');
   }
 }
 

@@ -265,11 +265,10 @@ function createEventCard(event) {
   return `
       <div class="event-card" style="border: 1px solid #ddd; border-radius: 20px; background: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.1); overflow: hidden; cursor: pointer;" onclick="goToEventDetail('${event.id}')">
       <!-- Image de l'événement -->
-      <div style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative; display: flex; align-items: center; justify-content: center; color: white;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3);"></div>
+      <div style="height: 200px; ${event.image_url ? `background-image: url('${event.image_url}'); background-size: cover; background-position: center;` : 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);'} position: relative; display: flex; align-items: center; justify-content: center; color: white;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4);"></div>
         <div style="position: relative; text-align: center; z-index: 1;">
-          <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
-          <div style="font-size: 18px; font-weight: bold; padding: 0 20px;">${event.title}</div>
+          <div style="font-size: 24px; font-weight: bold; padding: 0 20px; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">${event.title}</div>
         </div>
         
         <!-- Tags d'état -->
