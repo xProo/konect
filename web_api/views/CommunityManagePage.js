@@ -2,7 +2,30 @@ import { auth, database } from "../lib/supabase.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
 import { createCommonNavbar, updateCommonUserDisplay, handleCommonLogout } from "../components/CommonNavbar.js";
 
+
+let pageState = {
+  communities: [],
+  showCreateModal: false,
+  showEditModal: false,
+  editingCommunity: null,
+  loading: false,
+  message: { text: '', type: '', visible: false }
+};
+
+// Fonction pour re-render la page
+let rerenderPage;
+
 export default function CommunityManagePage() {
+  
+  rerenderPage = () => {
+    const container = document.querySelector('body > div');
+    if (container) {
+      const newStructure = createPageStructure();
+      const newElement = createElement(newStructure);
+      container.parentNode.replaceChild(newElement, container);
+    }
+  };
+  
   // Initialiser la page après le rendu
   setTimeout(async () => {
     await loadUserCommunities();
@@ -21,6 +44,55 @@ export default function CommunityManagePage() {
     });
   }, 100);
 
+  return createPageStructure();
+}
+
+// Fonction utilitaire pour créer un élément DOM (copie simplifiée du framework)
+function createElement(structure) {
+  const elem = document.createElement(structure.tag);
+  
+  if (structure.attributes) {
+    for (let attribute of structure.attributes) {
+      const attrName = attribute[0];
+      const attrValue = attribute[1];
+      if (attrName === "style") {
+        Object.assign(elem.style, attrValue);
+      } else if (attrName === "class") {
+        elem.className = attrValue;
+      } else {
+        elem.setAttribute(attrName, attrValue);
+      }
+    }
+  }
+
+  if (structure.events) {
+    for (let eventName in structure.events) {
+      for (let listener of structure.events[eventName]) {
+        elem.addEventListener(eventName, listener);
+      }
+    }
+  }
+
+  if (structure.children) {
+    for (let child of structure.children) {
+      let childElem;
+      
+      if (typeof child === "string") {
+        childElem = document.createTextNode(child);
+      } else {
+        childElem = createElement(child);
+      }
+      
+      if (childElem) {
+        elem.appendChild(childElem);
+      }
+    }
+  }
+
+  return elem;
+}
+
+function createPageStructure() {
   return {
     tag: "div",
     children: [
@@ -291,12 +363,591 @@ export default function CommunityManagePage() {
             ]
           }
         ]
+      },
+
+
+      ...(pageState.showCreateModal ? [createCreateCommunityModal()] : []),
+      ...(pageState.showEditModal ? [createEditCommunityModal(pageState.editingCommunity)] : [])
+    ]
+  };
+}
+
+
+
+function createCreateCommunityModal() {
+  return {
+    tag: "div",
+    attributes: [["style", {
+      position: "fixed",
+      top: "0",
+      left: "0", 
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: "1000",
+      backdropFilter: "blur(5px)"
+    }]],
+    events: {
+      click: [(e) => {
+        if (e.target === e.currentTarget) {
+          closeCreateCommunityModal();
+        }
+      }]
+    },
+    children: [
+      {
+        tag: "div",
+        attributes: [["style", {
+          background: "white",
+          padding: "40px",
+          borderRadius: "12px",
+          width: "90%",
+          maxWidth: "500px",
+          maxHeight: "90vh",
+          overflowY: "auto"
+        }]],
+        children: [
+          {
+            tag: "h2",
+            attributes: [["style", {
+              margin: "0 0 25px 0",
+              color: "#2c3e50",
+              fontSize: "1.8rem",
+              fontWeight: "600"
+            }]],
+            children: ["Créer une nouvelle communauté"]
+          },
+          
+          {
+            tag: "form",
+            attributes: [["id", "community-form"]],
+            events: {
+              submit: [(e) => {
+                e.preventDefault();
+                handleCreateCommunitySubmit();
+              }]
+            },
+            children: [
+              // Nom de la communauté
+              {
+                tag: "div",
+                attributes: [["style", { marginBottom: "20px" }]],
+                children: [
+                  {
+                    tag: "label",
+                    attributes: [["style", {
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "500",
+                      color: "#2c3e50"
+                    }]],
+                    children: ["Nom de la communauté *"]
+                  },
+                  {
+                    tag: "input",
+                    attributes: [
+                      ["type", "text"],
+                      ["id", "community-name"],
+                      ["required", "required"],
+                      ["style", {
+                        width: "100%",
+                        padding: "12px",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        fontSize: "14px"
+                      }],
+                      ["placeholder", "Ex: Club de Photographie de Paris"]
+                    ]
+                  }
+                ]
+              },
+              
+              // Description
+              {
+                tag: "div",
+                attributes: [["style", { marginBottom: "20px" }]],
+                children: [
+                  {
+                    tag: "label",
+                    attributes: [["style", {
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "500",
+                      color: "#2c3e50"
+                    }]],
+                    children: ["Description"]
+                  },
+                  {
+                    tag: "textarea",
+                    attributes: [
+                      ["id", "community-description"],
+                      ["rows", "4"],
+                      ["style", {
+                        width: "100%",
+                        padding: "12px",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        resize: "vertical",
+                        fontSize: "14px"
+                      }],
+                      ["placeholder", "Décrivez votre communauté et ses objectifs..."]
+                    ]
+                  }
+                ]
+              },
+              
+              // Catégorie et Localisation
+              {
+                tag: "div",
+                attributes: [["style", {
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "15px",
+                  marginBottom: "20px"
+                }]],
+                children: [
+                  {
+                    tag: "div",
+                    children: [
+                      {
+                        tag: "label",
+                        attributes: [["style", {
+                          display: "block",
+                          marginBottom: "8px",
+                          fontWeight: "500",
+                          color: "#2c3e50"
+                        }]],
+                        children: ["Catégorie"]
+                      },
+                      {
+                        tag: "select",
+                        attributes: [
+                          ["id", "community-category"],
+                          ["style", {
+                            width: "100%",
+                            padding: "12px",
+                            border: "1px solid #dee2e6",
+                            borderRadius: "8px",
+                            boxSizing: "border-box",
+                            fontSize: "14px"
+                          }]
+                        ],
+                        children: [
+                          { tag: "option", attributes: [["value", ""]], children: ["Sélectionnez une catégorie"] },
+                          { tag: "option", attributes: [["value", "Sport"]], children: ["Sport"] },
+                          { tag: "option", attributes: [["value", "Culture"]], children: ["Culture"] },
+                          { tag: "option", attributes: [["value", "Technologie"]], children: ["Technologie"] },
+                          { tag: "option", attributes: [["value", "Art"]], children: ["Art"] },
+                          { tag: "option", attributes: [["value", "Musique"]], children: ["Musique"] },
+                          { tag: "option", attributes: [["value", "Cuisine"]], children: ["Cuisine"] },
+                          { tag: "option", attributes: [["value", "Voyage"]], children: ["Voyage"] },
+                          { tag: "option", attributes: [["value", "Autre"]], children: ["Autre"] }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    tag: "div",
+                    children: [
+                      {
+                        tag: "label",
+                        attributes: [["style", {
+                          display: "block",
+                          marginBottom: "8px",
+                          fontWeight: "500",
+                          color: "#2c3e50"
+                        }]],
+                        children: ["Localisation"]
+                      },
+                      {
+                        tag: "input",
+                        attributes: [
+                          ["type", "text"],
+                          ["id", "community-location"],
+                          ["style", {
+                            width: "100%",
+                            padding: "12px",
+                            border: "1px solid #dee2e6",
+                            borderRadius: "8px",
+                            boxSizing: "border-box",
+                            fontSize: "14px"
+                          }],
+                          ["placeholder", "Ex: Paris, France"]
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              
+              // Boutons
+              {
+                tag: "div",
+                attributes: [["style", {
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                  marginTop: "30px"
+                }]],
+                children: [
+                  {
+                    tag: "button",
+                    attributes: [
+                      ["type", "button"],
+                      ["style", {
+                        padding: "12px 24px",
+                        background: "#f8f9fa",
+                        color: "#6c757d",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: "500"
+                      }]
+                    ],
+                    events: {
+                      click: [() => closeCreateCommunityModal()]
+                    },
+                    children: ["Annuler"]
+                  },
+                  {
+                    tag: "button",
+                    attributes: [
+                      ["type", "submit"],
+                      ["style", {
+                        padding: "12px 24px",
+                        background: "#667eea",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: "500"
+                      }]
+                    ],
+                    children: ["Créer la communauté"]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]
   };
 }
 
-// === FONCTIONS DE GESTION ===
+function createEditCommunityModal(community) {
+  if (!community) return null;
+  
+  return {
+    tag: "div",
+    attributes: [["style", {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: "1000",
+      backdropFilter: "blur(5px)"
+    }]],
+    events: {
+      click: [(e) => {
+        if (e.target === e.currentTarget) {
+          closeEditCommunityModal();
+        }
+      }]
+    },
+    children: [
+      {
+        tag: "div",
+        attributes: [["style", {
+          background: "white",
+          padding: "40px",
+          borderRadius: "12px",
+          width: "90%",
+          maxWidth: "500px",
+          maxHeight: "90vh",
+          overflowY: "auto"
+        }]],
+        children: [
+          {
+            tag: "h2",
+            attributes: [["style", {
+              margin: "0 0 25px 0",
+              color: "#2c3e50",
+              fontSize: "1.8rem",
+              fontWeight: "600"
+            }]],
+            children: ["Modifier la communauté"]
+          },
+          
+          {
+            tag: "form",
+            attributes: [["id", "edit-community-form"]],
+            events: {
+              submit: [(e) => {
+                e.preventDefault();
+                handleEditCommunitySubmit(community.id);
+              }]
+            },
+            children: [
+              // Nom de la communauté
+              {
+                tag: "div",
+                attributes: [["style", { marginBottom: "20px" }]],
+                children: [
+                  {
+                    tag: "label",
+                    attributes: [["style", {
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "500",
+                      color: "#2c3e50"
+                    }]],
+                    children: ["Nom de la communauté *"]
+                  },
+                  {
+                    tag: "input",
+                    attributes: [
+                      ["type", "text"],
+                      ["id", "edit-community-name"],
+                      ["required", "required"],
+                      ["value", community.name || ""],
+                      ["style", {
+                        width: "100%",
+                        padding: "12px",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        fontSize: "14px"
+                      }],
+                      ["placeholder", "Ex: Club de Photographie de Paris"]
+                    ]
+                  }
+                ]
+              },
+              
+              // Description
+              {
+                tag: "div",
+                attributes: [["style", { marginBottom: "20px" }]],
+                children: [
+                  {
+                    tag: "label",
+                    attributes: [["style", {
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "500",
+                      color: "#2c3e50"
+                    }]],
+                    children: ["Description"]
+                  },
+                  {
+                    tag: "textarea",
+                    attributes: [
+                      ["id", "edit-community-description"],
+                      ["rows", "4"],
+                      ["style", {
+                        width: "100%",
+                        padding: "12px",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "8px",
+                        boxSizing: "border-box",
+                        resize: "vertical",
+                        fontSize: "14px"
+                      }],
+                      ["placeholder", "Décrivez votre communauté et ses objectifs..."]
+                    ],
+                    children: [community.description || ""]
+                  }
+                ]
+              },
+              
+              // Catégorie et Localisation
+              {
+                tag: "div",
+                attributes: [["style", {
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "15px",
+                  marginBottom: "20px"
+                }]],
+                children: [
+                  {
+                    tag: "div",
+                    children: [
+                      {
+                        tag: "label",
+                        attributes: [["style", {
+                          display: "block",
+                          marginBottom: "8px",
+                          fontWeight: "500",
+                          color: "#2c3e50"
+                        }]],
+                        children: ["Catégorie"]
+                      },
+                      {
+                        tag: "select",
+                        attributes: [
+                          ["id", "edit-community-category"],
+                          ["style", {
+                            width: "100%",
+                            padding: "12px",
+                            border: "1px solid #dee2e6",
+                            borderRadius: "8px",
+                            boxSizing: "border-box",
+                            fontSize: "14px"
+                          }]
+                        ],
+                        children: [
+                          { 
+                            tag: "option", 
+                            attributes: [["value", ""], ...((!community.category || community.category === "") ? [["selected", "selected"]] : [])], 
+                            children: ["Sélectionnez une catégorie"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Sport"], ...(community.category === "Sport" ? [["selected", "selected"]] : [])], 
+                            children: ["Sport"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Culture"], ...(community.category === "Culture" ? [["selected", "selected"]] : [])], 
+                            children: ["Culture"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Technologie"], ...(community.category === "Technologie" ? [["selected", "selected"]] : [])], 
+                            children: ["Technologie"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Art"], ...(community.category === "Art" ? [["selected", "selected"]] : [])], 
+                            children: ["Art"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Musique"], ...(community.category === "Musique" ? [["selected", "selected"]] : [])], 
+                            children: ["Musique"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Cuisine"], ...(community.category === "Cuisine" ? [["selected", "selected"]] : [])], 
+                            children: ["Cuisine"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Voyage"], ...(community.category === "Voyage" ? [["selected", "selected"]] : [])], 
+                            children: ["Voyage"] 
+                          },
+                          { 
+                            tag: "option", 
+                            attributes: [["value", "Autre"], ...(community.category === "Autre" ? [["selected", "selected"]] : [])], 
+                            children: ["Autre"] 
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    tag: "div",
+                    children: [
+                      {
+                        tag: "label",
+                        attributes: [["style", {
+                          display: "block",
+                          marginBottom: "8px",
+                          fontWeight: "500",
+                          color: "#2c3e50"
+                        }]],
+                        children: ["Localisation"]
+                      },
+                      {
+                        tag: "input",
+                        attributes: [
+                          ["type", "text"],
+                          ["id", "edit-community-location"],
+                          ["value", community.location || ""],
+                          ["style", {
+                            width: "100%",
+                            padding: "12px",
+                            border: "1px solid #dee2e6",
+                            borderRadius: "8px",
+                            boxSizing: "border-box",
+                            fontSize: "14px"
+                          }],
+                          ["placeholder", "Ex: Paris, France"]
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              
+              // Boutons
+              {
+                tag: "div",
+                attributes: [["style", {
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "flex-end",
+                  marginTop: "30px"
+                }]],
+                children: [
+                  {
+                    tag: "button",
+                    attributes: [
+                      ["type", "button"],
+                      ["style", {
+                        padding: "12px 24px",
+                        background: "#f8f9fa",
+                        color: "#6c757d",
+                        border: "1px solid #dee2e6",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: "500"
+                      }]
+                    ],
+                    events: {
+                      click: [() => closeEditCommunityModal()]
+                    },
+                    children: ["Annuler"]
+                  },
+                  {
+                    tag: "button",
+                    attributes: [
+                      ["type", "submit"],
+                      ["style", {
+                        padding: "12px 24px",
+                        background: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontWeight: "500"
+                      }]
+                    ],
+                    children: ["Mettre à jour"]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+
 
 async function loadUserCommunities() {
   try {
@@ -445,128 +1096,67 @@ function updateStats(communities) {
 // === ACTIONS ===
 
 function showCreateCommunityForm() {
-  const modalId = 'create-community-modal';
-  
-  // Supprimer le modal existant s'il y en a un
-  const existingModal = document.getElementById(modalId);
-  if (existingModal) {
-    existingModal.remove();
-  }
-  
-  const modal = document.createElement('div');
-  modal.id = modalId;
-  modal.style.cssText = `
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.5); display: flex; justify-content: center; 
-    align-items: center; z-index: 1000; backdrop-filter: blur(5px);
-  `;
-  
-  modal.innerHTML = `
-    <div style="background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
-      <h2 style="margin: 0 0 25px 0; color: #2c3e50; font-size: 1.8rem; font-weight: 600;">
-        Créer une nouvelle communauté
-      </h2>
-      
-      <form id="community-form">
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Nom de la communauté *</label>
-          <input type="text" id="community-name" required 
-                 style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;"
-                 placeholder="Ex: Club de Photographie de Paris">
-        </div>
-        
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Description</label>
-          <textarea id="community-description" rows="4"
-                    style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; resize: vertical; font-size: 14px;"
-                    placeholder="Décrivez votre communauté et ses objectifs..."></textarea>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div>
-            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Catégorie</label>
-            <select id="community-category"
-                    style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;">
-              <option value="">Sélectionnez une catégorie</option>
-              <option value="Sport">Sport</option>
-              <option value="Culture">Culture</option>
-              <option value="Technologie">Technologie</option>
-              <option value="Art">Art</option>
-              <option value="Musique">Musique</option>
-              <option value="Cuisine">Cuisine</option>
-              <option value="Voyage">Voyage</option>
-              <option value="Autre">Autre</option>
-            </select>
-          </div>
-          
-          <div>
-            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2c3e50;">Localisation</label>
-            <input type="text" id="community-location"
-                   style="width: 100%; padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 14px;"
-                   placeholder="Ex: Paris, France">
-          </div>
-        </div>
-        
-        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px;">
-          <button type="button" onclick="closeCreateCommunityModal()" 
-                  style="padding: 12px 24px; background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; border-radius: 8px; cursor: pointer; font-weight: 500;">
-            Annuler
-          </button>
-          <button type="submit"
-                  style="padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-            Créer la communauté
-          </button>
-        </div>
-      </form>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  
-  // Gérer la soumission du formulaire
-  document.getElementById('community-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    await handleCreateCommunity();
-  });
-  
-  // Fermer le modal en cliquant à l'extérieur
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeCreateCommunityModal();
-    }
-  });
+  pageState.showCreateModal = true;
+  pageState.showEditModal = false;
+  rerenderPage();
 }
 
 function closeCreateCommunityModal() {
-  const modal = document.getElementById('create-community-modal');
-  if (modal) {
-    modal.remove();
+  pageState.showCreateModal = false;
+  rerenderPage();
+}
+
+async function editCommunity(communityId) {
+  try {
+    // Récupérer les données de la communauté
+    const { data: community, error } = await database.getCommunityById(communityId);
+    
+    if (error || !community) {
+      showMessage('Erreur lors du chargement de la communauté', 'error');
+      return;
+    }
+    
+    pageState.editingCommunity = community;
+    pageState.showEditModal = true;
+    pageState.showCreateModal = false;
+    rerenderPage();
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
   }
 }
 
-async function handleCreateCommunity() {
-  const communityData = {
-    name: document.getElementById('community-name').value.trim(),
-    description: document.getElementById('community-description').value.trim(),
-    category: document.getElementById('community-category').value,
-    location: document.getElementById('community-location').value.trim()
-  };
+function closeEditCommunityModal() {
+  pageState.showEditModal = false;
+  pageState.editingCommunity = null;
+  rerenderPage();
+}
+
+async function handleCreateCommunitySubmit() {
+  const name = document.getElementById('community-name').value.trim();
+  const description = document.getElementById('community-description').value.trim();
+  const category = document.getElementById('community-category').value;
+  const location = document.getElementById('community-location').value.trim();
   
-  if (!communityData.name) {
-    showMessage('Le nom de la communauté est obligatoire', 'error');
+  if (!name) {
+    showMessage('Le nom de la communauté est requis', 'error');
     return;
   }
   
   try {
     const { data: { user } } = await auth.getCurrentUser();
+    
     if (!user) {
-      showMessage('Vous devez être connecté pour créer une communauté', 'error');
+      showMessage('Vous devez être connecté', 'error');
       return;
     }
     
-    communityData.referent_id = user.id;
-    
-    const { error } = await database.createCommunity(communityData);
+    const { data: community, error } = await database.createCommunity({
+      name,
+      description: description || null,
+      category: category || null,
+      location: location || null,
+      created_by: user.id
+    });
     
     if (error) {
       showMessage(`Erreur lors de la création : ${error.message}`, 'error');
@@ -579,6 +1169,39 @@ async function handleCreateCommunity() {
     showMessage(`Erreur inattendue : ${error.message}`, 'error');
   }
 }
+
+async function handleEditCommunitySubmit(communityId) {
+  const name = document.getElementById('edit-community-name').value.trim();
+  const description = document.getElementById('edit-community-description').value.trim();
+  const category = document.getElementById('edit-community-category').value;
+  const location = document.getElementById('edit-community-location').value.trim();
+  
+  if (!name) {
+    showMessage('Le nom de la communauté est requis', 'error');
+    return;
+  }
+  
+  try {
+    const { data: community, error } = await database.updateCommunity(communityId, {
+      name,
+      description: description || null,
+      category: category || null,
+      location: location || null
+    });
+    
+    if (error) {
+      showMessage(`Erreur lors de la modification : ${error.message}`, 'error');
+    } else {
+      showMessage('Communauté modifiée avec succès !', 'success');
+      closeEditCommunityModal();
+      await loadUserCommunities();
+    }
+  } catch (error) {
+    showMessage(`Erreur inattendue : ${error.message}`, 'error');
+  }
+}
+
+
 
 async function deleteCommunity(communityId) {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cette communauté ? Cette action est irréversible.')) {
@@ -599,9 +1222,7 @@ async function deleteCommunity(communityId) {
   }
 }
 
-function editCommunity(communityId) {
-  showMessage('Fonctionnalité de modification à venir...', 'info');
-}
+
 
 function viewDashboard(communityId) {
   window.history.pushState({}, '', `/community-dashboard?id=${communityId}`);
@@ -638,6 +1259,9 @@ function showMessage(message, type) {
 // Rendre les fonctions disponibles globalement
 window.showCreateCommunityForm = showCreateCommunityForm;
 window.closeCreateCommunityModal = closeCreateCommunityModal;
+window.closeEditCommunityModal = closeEditCommunityModal;
+window.handleCreateCommunitySubmit = handleCreateCommunitySubmit;
+window.handleEditCommunitySubmit = handleEditCommunitySubmit;
 window.editCommunity = editCommunity;
 window.viewDashboard = viewDashboard;
 window.deleteCommunity = deleteCommunity;

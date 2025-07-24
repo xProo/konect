@@ -2,7 +2,27 @@ import { auth, admin } from "../lib/supabase.js";
 import { BrowserLink } from "../components/BrowserRouter.js";
 import { createCommonNavbar, updateCommonUserDisplay, handleCommonLogout } from "../components/CommonNavbar.js";
 
+
+let adminPageState = {
+  showEditModal: false,
+  editingCommunity: null,
+  message: { text: '', type: '', visible: false }
+};
+
+// Fonction pour re-render la page admin
+let rerenderAdminPage;
+
 export default function AdminPage() {
+  
+  rerenderAdminPage = () => {
+    const container = document.querySelector('body > div');
+    if (container) {
+      const newStructure = createAdminPageStructure();
+      const newElement = createElementAdmin(newStructure);
+      container.parentNode.replaceChild(newElement, container);
+    }
+  };
+  
   // Initialiser la page après le rendu
   setTimeout(async () => {
     await checkAdminAccess();
@@ -21,6 +41,55 @@ export default function AdminPage() {
     });
   }, 100);
 
+  return createAdminPageStructure();
+}
+
+
+function createElementAdmin(structure) {
+  const elem = document.createElement(structure.tag);
+  
+  if (structure.attributes) {
+    for (let attribute of structure.attributes) {
+      const attrName = attribute[0];
+      const attrValue = attribute[1];
+      if (attrName === "style") {
+        Object.assign(elem.style, attrValue);
+      } else if (attrName === "class") {
+        elem.className = attrValue;
+      } else {
+        elem.setAttribute(attrName, attrValue);
+      }
+    }
+  }
+
+  if (structure.events) {
+    for (let eventName in structure.events) {
+      for (let listener of structure.events[eventName]) {
+        elem.addEventListener(eventName, listener);
+      }
+    }
+  }
+
+  if (structure.children) {
+    for (let child of structure.children) {
+      let childElem;
+      
+      if (typeof child === "string") {
+        childElem = document.createTextNode(child);
+      } else {
+        childElem = createElementAdmin(child);
+      }
+      
+      if (childElem) {
+        elem.appendChild(childElem);
+      }
+    }
+  }
+
+  return elem;
+}
+
+function createAdminPageStructure() {
   return {
     tag: "div",
     children: [
@@ -39,7 +108,7 @@ export default function AdminPage() {
             tag: "div",
             attributes: [["style", { maxWidth: "1200px", margin: "0 auto" }]],
             children: [
-              // Breadcrumb
+             
               {
                 tag: "nav",
                 attributes: [["style", { marginBottom: "30px" }]],
