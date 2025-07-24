@@ -3,134 +3,72 @@ import { BrowserLink as Link } from "../components/BrowserRouter.js";
 const Page404 = function () {
   return {
     tag: "div",
-    attributes: [
-      ["class", "page-404"],
-      ["style", {
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        color: "white",
-        textAlign: "center",
-        padding: "20px"
-      }]
-    ],
+    attributes: [["class", "min-h-screen bg-white flex items-center justify-center p-8"]],
     children: [
       {
         tag: "div",
-        attributes: [
-          ["style", {
-            background: "rgba(255, 255, 255, 0.1)",
-            backdropFilter: "blur(10px)",
-            borderRadius: "20px",
-            padding: "60px 40px",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            maxWidth: "600px",
-            width: "100%"
-          }]
-        ],
+        attributes: [["class", "text-center max-w-md mx-auto"]],
         children: [
-          {
-            tag: "div",
-            attributes: [
-              ["style", {
-                fontSize: "8rem",
-                fontWeight: "bold",
-                marginBottom: "20px",
-                background: "linear-gradient(45deg, #ff6b6b, #feca57)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
-              }]
-            ],
-            children: ["404"]
-          },
+          // Simple 404 number
           {
             tag: "h1",
-            attributes: [
-              ["style", { fontSize: "2.5rem", marginBottom: "15px", fontWeight: "600" }]
-            ],
+            attributes: [["class", "text-8xl font-light text-gray-900 mb-8"]],
+            children: ["404"]
+          },
+
+          // Simple heading
+          {
+            tag: "h2",
+            attributes: [["class", "text-2xl font-light text-gray-700 mb-6"]],
             children: ["Page introuvable"]
           },
+
+          // Simple description
           {
             tag: "p",
-            attributes: [
-              ["style", { fontSize: "1.2rem", marginBottom: "40px", opacity: "0.9", lineHeight: "1.6" }]
-            ],
-            children: ["Oops ! La page que vous recherchez semble avoir disparu dans l'espace numérique. Ne vous inquiétez pas, nous allons vous ramener en sécurité."]
+            attributes: [["class", "text-gray-500 mb-8 leading-relaxed"]],
+            children: ["La page que vous recherchez n'existe pas ou a été déplacée."]
           },
+
+          // Simple buttons
           {
             tag: "div",
-            attributes: [
-              ["style", { display: "flex", gap: "20px", justifyContent: "center", flexWrap: "wrap" }]
-            ],
+            attributes: [["class", "space-y-4"]],
             children: [
               {
-                tag: Link,
+                tag: "button",
                 attributes: [
-                  ["link", "/home"],
-                  ["title", "Retour à l'accueil"],
-                  ["style", {
-                    background: "linear-gradient(45deg, #ff6b6b, #ee5a52)",
-                    color: "white",
-                    padding: "15px 30px",
-                    borderRadius: "50px",
-                    textDecoration: "none",
-                    fontWeight: "600",
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 4px 15px rgba(255, 107, 107, 0.4)",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: "1rem"
-                  }]
+                  ["class", "w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"],
+                  ["onclick", "window.location.href = '/'"]
                 ],
+                children: ["Retour à l'accueil"]
               },
               {
-                tag: Link,
+                tag: "button",
                 attributes: [
-                  ["link", "/events"],
-                  ["title", "Voir les evénements"],
-                  ["style", {
-                    background: "rgba(255, 255, 255, 0.2)",
-                    color: "white",
-                    padding: "15px 30px",
-                    borderRadius: "50px",
-                    textDecoration: "none",
-                    fontWeight: "600",
-                    transition: "all 0.3s ease",
-                    border: "2px solid rgba(255, 255, 255, 0.3)",
-                    cursor: "pointer",
-                    fontSize: "1rem"
-                  }]
+                  ["class", "w-full border border-gray-300 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors duration-200"],
+                  ["onclick", "window.location.href = '/events'"]
                 ],
+                children: ["Voir les événements"]
               }
             ]
           },
+
+          // Simple footer
           {
             tag: "div",
-            attributes: [
-              ["style", {
-                marginTop: "40px",
-                paddingTop: "30px",
-                borderTop: "1px solid rgba(255, 255, 255, 0.2)"
-              }]
-            ],
+            attributes: [["class", "mt-12 pt-8 border-t border-gray-200"]],
             children: [
               {
                 tag: "p",
-                attributes: [
-                  ["style", { fontSize: "0.9rem", opacity: "0.7", margin: "0" }]
-                ],
-                children: ["Code d'erreur: 404 • Page non trouvée"]
+                attributes: [["class", "text-xs text-gray-400"]],
+                children: ["Erreur 404 • Konect"]
               }
             ]
           }
         ]
       }
-    ],
+    ]
   };
 };
 
