@@ -89,7 +89,6 @@ export function createCommonNavbar() {
                   {
                     tag: "span",
                     attributes: [["style", { fontSize: "18px" }]],
-                    children: ["📍"]
                   },
                   {
                     tag: "span",

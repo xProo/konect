@@ -27,7 +27,7 @@ export default function InscriptionPage() {
           {
             tag: "h1",
             attributes: [["style", { color: "#333", marginBottom: "10px", fontSize: "28px" }]],
-            children: ["✨ Inscription"]
+            children: ["Inscription"]
           },
           {
             tag: "p",
@@ -254,7 +254,7 @@ export default function InscriptionPage() {
                     transition: "background-color 0.3s ease"
                   }]
                 ],
-                children: ["🚀 Créer mon compte"]
+                children: ["Créer mon compte"]
               }
             ]
           }
@@ -276,7 +276,7 @@ export default function InscriptionPage() {
             title: {
               tag: "span",
               attributes: [["style", { color: "#007bff", fontWeight: "600", textDecoration: "none" }]],
-              children: ["🔐 Se connecter"]
+              children: ["Se connecter"]
             }
           })
         ]

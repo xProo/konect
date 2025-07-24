@@ -232,7 +232,6 @@ export default function EventDetailPage() {
                           {
                             tag: "div",
                             attributes: [["style", { fontSize: "20px", width: "30px", textAlign: "center" }]],
-                            children: ["📅"]
                           },
                           {
                             tag: "div",
@@ -254,7 +253,6 @@ export default function EventDetailPage() {
                           {
                             tag: "div",
                             attributes: [["style", { fontSize: "20px", width: "30px", textAlign: "center" }]],
-                            children: ["📍"]
                           },
                           {
                             tag: "div",
@@ -276,7 +274,6 @@ export default function EventDetailPage() {
                           {
                             tag: "div",
                             attributes: [["style", { fontSize: "20px", width: "30px", textAlign: "center" }]],
-                            children: ["👤"]
                           },
                           {
                             tag: "div",
@@ -326,7 +323,7 @@ export default function EventDetailPage() {
                           borderBottom: "2px solid #007bff",
                           paddingBottom: "10px"
                         }]],
-                        children: ["📝 Détails de l'événement"]
+                        children: ["Détails de l'événement"]
                       },
                       {
                         tag: "div",
@@ -360,7 +357,7 @@ export default function EventDetailPage() {
                           borderBottom: "2px solid #28a745",
                           paddingBottom: "10px"
                         }]],
-                        children: ["👥 Participants"]
+                        children: ["Participants"]
                       },
                       {
                         tag: "div",
@@ -473,10 +470,10 @@ async function updateUserDisplay() {
   } else {
     userDisplay.innerHTML = `
       <a href="/connexion" style="text-decoration: none; padding: 8px 15px; background: #007bff; color: white; border-radius: 5px; font-weight: bold;">
-        🔐 Se connecter
+        Se connecter
       </a>
       <a href="/inscription" style="text-decoration: none; padding: 8px 15px; background: #28a745; color: white; border-radius: 5px; font-weight: bold;">
-        ✍️ S'inscrire
+        S'inscrire
       </a>
     `;
   }
@@ -568,7 +565,6 @@ function displayEventDetails() {
   if (eventDate && currentEvent.date) {
     const date = new Date(currentEvent.date);
     eventDate.innerHTML = `
-      <div style="font-size: 20px; width: 30px; text-align: center;">📅</div>
       <div>
         <div style="color: #6c757d; font-size: 14px;">Date</div>
         <div style="font-weight: bold; color: #333; font-size: 16px;">
@@ -587,7 +583,6 @@ function displayEventDetails() {
   const location = document.getElementById('event-location');
   if (location) {
     location.innerHTML = `
-      <div style="font-size: 20px; width: 30px; text-align: center;">📍</div>
       <div>
         <div style="color: #6c757d; font-size: 14px;">Lieu</div>
         <div style="font-weight: bold; color: #333; font-size: 16px;">
@@ -601,7 +596,6 @@ function displayEventDetails() {
   const organizer = document.getElementById('event-organizer');
   if (organizer) {
     organizer.innerHTML = `
-      <div style="font-size: 20px; width: 30px; text-align: center;">👤</div>
       <div>
         <div style="color: #6c757d; font-size: 14px;">Organisé par</div>
         <div style="font-weight: bold; color: #333; font-size: 16px;">
@@ -647,7 +641,6 @@ function displayParticipants(participants) {
   if (participants.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; padding: 40px; color: #666;">
-        <div style="font-size: 48px; margin-bottom: 15px;">👥</div>
         <p style="margin: 0; font-size: 18px;">Aucun participant pour le moment</p>
         <p style="margin: 10px 0 0 0; color: #888;">Soyez le premier à vous inscrire !</p>
       </div>
@@ -704,7 +697,7 @@ async function updateActionButtons() {
   if (!currentUser) {
     container.innerHTML = `
       <a href="/connexion" style="padding: 15px 25px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; text-align: center; font-size: 16px;">
-        🔐 Se connecter pour s'inscrire
+        Se connecter pour s'inscrire
       </a>
       <div style="text-align: center; margin-top: 10px; font-size: 14px; color: #6c757d;">
         Connectez-vous pour participer à cet événement
@@ -716,7 +709,7 @@ async function updateActionButtons() {
   if (isEventPassed) {
     container.innerHTML = `
       <button disabled style="padding: 15px 25px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: not-allowed; font-weight: bold; font-size: 16px;">
-        ✅ Événement terminé
+        Événement terminé
       </button>
     `;
     return;

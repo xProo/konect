@@ -36,7 +36,7 @@ export default function ConnexionPage() {
           {
             tag: "h1",
             attributes: [["style", { color: "#333", marginBottom: "10px", fontSize: "28px" }]],
-            children: ["🔐 Connexion"]
+            children: ["Connexion"]
           },
           {
             tag: "p",
@@ -201,7 +201,7 @@ export default function ConnexionPage() {
             title: {
               tag: "span",
               attributes: [["style", { color: "#007bff", fontWeight: "600", textDecoration: "none" }]],
-              children: ["✨ Créer un compte gratuit"]
+              children: ["Créer un compte gratuit"]
             }
           })
         ]

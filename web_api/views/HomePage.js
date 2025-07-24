@@ -6,934 +6,162 @@ export default function HomePage() {
   // Initialiser l'affichage utilisateur après le rendu
   setTimeout(async () => {
     await updateCommonUserDisplay();
-    await loadCommunities(); // Charger les communautés
+    await loadEvents();
+    await loadCommunities();
+
     // Écouter les changements d'authentification
     auth.onAuthStateChange((event, session) => {
       updateCommonUserDisplay();
-      loadCommunities(); // Recharger les communautés quand l'auth change
+      loadEvents();
+      loadCommunities();
     });
   }, 100);
 
   return {
     tag: "div",
+    attributes: [["class", "min-h-screen bg-gradient-to-br from-slate-50 to-blue-50"]],
     children: [
       createCommonNavbar(),
-      createContent()
-    ]
-  };
-}
-
-function createNavbar() {
-  return {
-    tag: "div",
-    attributes: [["class", "navbar-desktop"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "container"]],
-        children: [
-          // Logo
-          {
-            tag: "div",
-            attributes: [["class", "logo"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/logo.svg"]]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "konect"]],
-                children: ["Qonect"]
-              }
-            ]
-          },
-          
-          // Navigation
-          {
-            tag: "div",
-            attributes: [["class", "navigation"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "dropdown-separated"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "map-pin-icon"], ["alt", ""], ["src", "images/Icon_location.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Paris"]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "divider"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "divider1"]],
-                        children: []
-                      }
-                    ]
-                  }
-                ]
-              },
-              BrowserLink({
-                link: "/events",
-                title: {
-                  tag: "div",
-                  attributes: [["class", "nav-link"]],
-                  children: [
-                    {
-                      tag: "div",
-                      attributes: [["class", "label"]],
-                      children: ["Événements"]
-                    }
-                  ]
-                }
-              }),
-              BrowserLink({
-                link: "/communities",
-                title: {
-                  tag: "div",
-                  attributes: [["class", "nav-link"]],
-                  children: [
-                    {
-                      tag: "div",
-                      attributes: [["class", "label"]],
-                      children: ["Mes Communautés"]
-                    }
-                  ]
-                }
-              }),
-            //   {
-            //     tag: "div",
-            //     attributes: [["class", "nav-link"]],
-            //     children: [
-            //       {
-            //         tag: "div",
-            //         attributes: [["class", "label"]],
-            //         children: ["Billeterie"]
-            //       }
-            //     ]
-            //   },
-              {
-                tag: "div",
-                attributes: [["class", "dropdown"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Centre d'aide"]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "chevron-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-                  }
-                ]
-              }
-            ]
-          },
-          
-          // Buttons
-          {
-            tag: "div",
-            attributes: [["class", "buttons"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "button-group"], ["id", "user-display-area"]],
-                children: [
-                  BrowserLink({
-                    link: "/connexion",
-                    title: {
-                      tag: "div",
-                      attributes: [["class", "dark-button"]],
-                      children: [
-                        {
-                          tag: "img",
-                          attributes: [["class", "map-pin-icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-                        },
-                        {
-                          tag: "div",
-                          attributes: [["class", "label5"]],
-                          children: ["Connexion"]
-                        }
-                      ]
-                    }
-                  })
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createContent() {
-  return {
-    tag: "div",
-    attributes: [["class", "content"]],
-    children: [
       createHeroSection(),
+      createFeaturesSection(),
       createCategoriesSection(),
-      createUpcomingEventsSection(),
-      createPopularNearEventsSection(),
-      createFilterableEventsSection(),
-      createSportsSection(),
-      createMusicDanceSection(),
-      createFeaturedSection(),
-      createCommunitiesSection(), // Nouvelle section pour les communautés
-      createBannerSection()
+      createEventsShowcase(),
+      createCtaSection(),
+      createFooter()
     ]
   };
 }
 
+// Hero Section moderne avec Tailwind CSS
 function createHeroSection() {
   return {
-    tag: "div",
-    attributes: [["class", "search-form-hero"]],
+    tag: "section",
+    attributes: [["class", "relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500"]],
     children: [
+      // Background pattern
       {
         tag: "div",
-        attributes: [["class", "slider-background"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "prev-next-buttons"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "secondary-button"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "icon"], ["alt", ""], ["src", "images/Icon_location.svg"]]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "secondary-button"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "icon"], ["alt", ""], ["src", "images/Icon_location.svg"]]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "text"]],
-            children: [
-              {
-                tag: "b",
-                attributes: [["class", "title"]],
-                children: ["Découvrez des événements près de chez vous"]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "text1"]],
-            children: ["Un seul endroit pour tous vos billets d'événements"]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "event"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "image-icon"], ["alt", ""], ["src", "images/image_header.jpg"]]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "ticket"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "shape-icon"], ["alt", ""], ["src", "images/shape.svg"]]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "divider-icon"], ["alt", ""], ["src", "images/divider.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "text2"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "jusqu"]],
-                        children: ["Jusqu'à"]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "div"]],
-                        children: ["€56"]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "star-icon"], ["alt", ""], ["src", "images/star.svg"]]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "search-form"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "input"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "arrow-icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "placeholder"]],
-                children: ["Recherche par événement ou communauté"]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "select"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "arrow-icon"], ["alt", ""], ["src", "images/Icon_location.svg"]]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "placeholder"]],
-                children: ["Lieu"]
-              },
-              {
-                tag: "img",
-                attributes: [["class", "arrow-icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "primary-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "label"]],
-                children: ["Recherche"]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createCategoriesSection() {
-  return {
-    tag: "div",
-    attributes: [["class", "categories"]],
-    children: [
-      createCategoryCard("images/microphone.svg", "Concerts"),
-      createCategoryCard("images/basketball.svg", "Sports"),
-      createCategoryCard("images/target.svg", "Loisirs"),
-      createCategoryCard("images/mirror-ball.svg", "Disco"),
-      createCategoryCard("images/press-conference.svg", "Conference"),
-      createCategoryCard("images/drama.svg", "Cinema")
-    ]
-  };
-}
-
-function createCategoryCard(iconSrc, text) {
-  return {
-    tag: "div",
-    attributes: [["class", "column"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "events-category-card"]],
-        children: [
-          {
-            tag: "img",
-            attributes: [["class", "microphone-icon"], ["alt", ""], ["src", iconSrc]]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "text3"]],
-            children: [text]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createUpcomingEventsSection() {
-  return {
-    tag: "div",
-    attributes: [["class", "upcoming-events"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "date-slider-title"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "date-slider"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "text9"]],
-                children: [
-                  {
-                    tag: "b",
-                    attributes: [["class", "number"]],
-                    children: ["16"]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "text10"]],
-                    children: ["Octobre, 2025"]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "pre-next-buttons"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "secondary-button2"]],
-                    children: [
-                      {
-                        tag: "img",
-                        attributes: [["class", "icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "secondary-button2"]],
-                    children: [
-                      {
-                        tag: "img",
-                        attributes: [["class", "icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "heading"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "heading1"]],
-                children: ["Événements virtuel à venir"]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "view-all-button"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label"]],
-                    children: ["Tout voir"]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "divider"]],
+        attributes: [["class", "absolute inset-0 bg-black bg-opacity-20"]],
         children: []
       },
+      // Animated background shapes
       {
         tag: "div",
-        attributes: [["class", "listings"]],
-        children: [
-          createEventCard1("images/event_1.jpg", "Nov 28", "15:00", "Événement virtuel", "Conference Notre Dame", "Free"),
-          createEventCard1("images/event_2.jpg", "Nov 28", "17:00", "Événement virtuel", "Podcast motivation", "€15.00"),
-          createEventCard1("images/event_3.jpg", "Nov 28", "8:30", "Événement virtuel", "Méditation du dimanche", "€23.00"),
-          createEventCard1("images/event_4.jpg", "Nov 28", "10:00", "Événement virtuel", "Étirements et exercices du matin", "€12.00")
-        ]
-      }
-    ]
-  };
-}
-
-function createEventCard1(imageSrc, date, time, type, title, price) {
-  return {
-    tag: "div",
-    attributes: [["class", "event-listing-card-v1"]],
-    children: [
-      {
-        tag: "img",
-        attributes: [["class", "image-icon1"], ["alt", ""], ["src", imageSrc]]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "body"]],
+        attributes: [["class", "absolute inset-0 overflow-hidden"]],
         children: [
           {
             tag: "div",
-            attributes: [["class", "metatitle"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "meta"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "date"]],
-                    children: [
-                      {
-                        tag: "img",
-                        attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/calendar.svg"]]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "time"]],
-                        children: [date]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [time]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: ["·"]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [type]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "title1"]],
-                children: [title]
-              }
-            ]
+            attributes: [["class", "absolute -top-40 -right-32 w-80 h-80 bg-white bg-opacity-10 rounded-full blur-3xl animate-pulse"]],
+            children: []
           },
           {
             tag: "div",
-            attributes: [["class", "price"]],
-            children: [price]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createPopularNearEventsSection() {
-  return {
-    tag: "div",
-    attributes: [["class", "popular-near-events"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "header"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "heading-pills"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "heading2"]],
-                children: ["Populaire à proximité"]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "pills"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "pill"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "label2"]],
-                        children: ["Tout"]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "pill1"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "label2"]],
-                        children: ["Theater & Cinema"]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "pill1"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "label2"]],
-                        children: ["Sports"]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "pill1"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "label2"]],
-                        children: ["Concert"]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "view-all-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "label"]],
-                children: ["Tout voir"]
-              },
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/icon.svg"]]
-              }
-            ]
+            attributes: [["class", "absolute -bottom-40 -left-32 w-80 h-80 bg-yellow-300 bg-opacity-20 rounded-full blur-3xl animate-pulse"]],
+            children: []
           }
         ]
       },
+      // Main content
       {
         tag: "div",
-        attributes: [["class", "listings1"]],
-        children: [
-          createLargeEventCard("images/proxi_1.jpg", "Nov 7", "10:00", "Sports", "Entraînez-vous avec des stars du fitness", "Montreuil", "€25.00"),
-          {
-            tag: "div",
-            attributes: [["class", "column6"]],
-            children: [
-              createSmallEventCard("images/proxi_2.jpg", "Dec 26", "19:00", "Concert", "Winter Fest", "Amiens", "€32.00"),
-              createSmallEventCard("images/proxi_3.jpg", "Oct 15", "18:00", "Théatre et Cinéma", "Parallax Show Ballet", "MO", "€56.00")
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createLargeEventCard(imageSrc, date, time, type, title, location, price) {
-  return {
-    tag: "div",
-    attributes: [["class", "event-listing-card-v14"]],
-    children: [
-      {
-        tag: "img",
-        attributes: [["class", "image-icon5"], ["alt", ""], ["src", imageSrc]]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "body4"]],
+        attributes: [["class", "relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center"]],
         children: [
           {
             tag: "div",
-            attributes: [["class", "metatitle4"]],
+            attributes: [["class", "space-y-8"]],
             children: [
+              // Badge
               {
                 tag: "div",
-                attributes: [["class", "meta"]],
+                attributes: [["class", "inline-flex items-center bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-6 py-2 text-white text-sm font-medium border border-white border-opacity-30"]],
+
+              },
+              // Main heading
+              {
+                tag: "h1",
+                attributes: [["class", "text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight"]],
+                children: [
+                  "Découvrez des ",
+                  {
+                    tag: "span",
+                    attributes: [["class", "bg-gradient-to-r from-yellow-300 to-orange-400 bg-clip-text text-transparent"]],
+                    children: ["événements"]
+                  },
+                  " extraordinaires"
+                ]
+              },
+              // Subtitle
+              {
+                tag: "p",
+                attributes: [["class", "text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed"]],
+                children: [
+                  "Connectez-vous à votre communauté et vivez des expériences inoubliables. Plus de 10,000 événements vous attendent."
+                ]
+              },
+              // CTA Buttons
+              {
+                tag: "div",
+                attributes: [["class", "flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"]],
                 children: [
                   {
-                    tag: "div",
-                    attributes: [["class", "date"]],
+                    tag: "button",
+                    attributes: [
+                      ["class", "group bg-white text-black-600 font-bold py-4 px-8 rounded-2xl text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 hover:bg-yellow-50"],
+                      ["onclick", "scrollToEvents()"]
+                    ],
                     children: [
                       {
-                        tag: "img",
-                        attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/calendar.svg"]]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "time"]],
-                        children: [date]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [time]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: ["·"]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [type]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "title1"]],
-                children: [title]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "date"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/map-pin.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [location]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "price-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "price4"]],
-                children: [price]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "dark-button"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label2"]],
-                    children: ["Réserver"]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createSmallEventCard(imageSrc, date, time, type, title, location, price) {
-  return {
-    tag: "div",
-    attributes: [["class", "event-listing-card-v2"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "body4"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "meta-title"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "meta-title"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "meta"]],
-                    children: [
-                      {
-                        tag: "div",
-                        attributes: [["class", "date"]],
+                        tag: "span",
+                        attributes: [["class", "flex items-center"]],
                         children: [
+                          "Explorer les événements",
                           {
-                            tag: "img",
-                            attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/calendar.svg"]]
-                          },
-                          {
-                            tag: "div",
-                            attributes: [["class", "time"]],
-                            children: [date]
+                            tag: "svg",
+                            attributes: [
+                              ["class", "w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"],
+                              ["fill", "currentColor"],
+                              ["viewBox", "0 0 20 20"]
+                            ],
+                            children: [
+                              {
+                                tag: "path",
+                                attributes: [["d", "M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"]],
+                                children: []
+                              }
+                            ]
                           }
                         ]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "time"]],
-                        children: [time]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "time"]],
-                        children: ["·"]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "time"]],
-                        children: [type]
                       }
                     ]
                   },
                   {
-                    tag: "div",
-                    attributes: [["class", "title1"]],
-                    children: [title]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "date"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/map-pin.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [location]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "price-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "price4"]],
-                children: [price]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "dark-button"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label2"]],
-                    children: ["Réserver"]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        tag: "img",
-        attributes: [["class", "image-icon6"], ["alt", ""], ["src", imageSrc]]
-      }
-    ]
-  };
-}
-
-function createFilterableEventsSection() {
-  return {
-    tag: "div",
-    attributes: [["class", "filterable-events"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "content1"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "heading3"]],
-            children: ["Sélectionnez votre événement"]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "filters"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "inputs"]],
-                children: [
-                  createFilterSelect("images/Icon.svg", "Categorie", "images/Arrow.svg"),
-                  createFilterSelect("images/Icon.svg", "Lieu", "images/Arrow.svg"),
-                  createFilterSelect("images/Icon.svg", "Date", null),
-                  createFilterSelect("images/Icon.svg", "Prix", "images/Arrow.svg")
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "sort"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label10"]],
-                    children: ["Trier par"]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "select4"]],
+                    tag: "button",
+                    attributes: [
+                      ["class", "group border-2 border-white text-white font-semibold py-4 px-8 rounded-2xl text-lg hover:bg-white hover:text-black transition-all duration-300"],
+                      ["onclick", "scrollToCategories()"]
+                    ],
                     children: [
                       {
-                        tag: "img",
-                        attributes: [["class", "icon8"], ["alt", ""], ["src", "images/Icon.svg"]]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "option"]],
-                        children: ["Plus populaire"]
-                      },
-                      {
-                        tag: "img",
-                        attributes: [["class", "icon8"], ["alt", ""], ["src", "images/Arrow.svg"]]
+                        tag: "span",
+                        attributes: [["class", "flex items-center"]],
+                        children: [
+                          "Télécharger l'app",
+                          {
+                            tag: "svg",
+                            attributes: [
+                              ["class", "w-5 h-5 ml-2 group-hover:rotate-12 transition-transform"],
+                              ["fill", "currentColor"],
+                              ["viewBox", "0 0 20 20"]
+                            ],
+                            children: [
+                              {
+                                tag: "path",
+                                attributes: [["d", "M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"]],
+                                children: []
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
@@ -941,148 +169,32 @@ function createFilterableEventsSection() {
               }
             ]
           },
+          // Stats quick preview
           {
             tag: "div",
-            attributes: [["class", "listings2"]],
+            attributes: [["class", "mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-white"]],
             children: [
-              createFilteredEventCard("images/s_event_1.jpg", "Sep 23", "18:00", "Conference", "Forum d'affaires de Chicago", "Chicago", "€75.00"),
-              createFilteredEventCard("images/s_event_2.png", "Nov 8", "17:30", "Concert", "Soirée musique classique", "Strasbourg", "€60.00"),
-              createFilteredEventCard("images/s_event_3.png", "Oct 16", "22:00", "Disco", "Disco Sunset Party", "Paris", "€45.00")
+              createStatItem("10K+", "Événements"),
+              createStatItem("50K+", "Participants"),
+              createStatItem("500+", "Villes"),
+              createStatItem("98%", "Satisfaction")
             ]
           }
         ]
       },
+      // Scroll indicator
       {
         tag: "div",
-        attributes: [["class", "primary-button1"]],
+        attributes: [["class", "absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce"]],
         children: [
           {
             tag: "div",
-            attributes: [["class", "label"]],
-            children: ["Afficher les 32 événements"]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createFilterSelect(iconSrc, text, arrowSrc) {
-  return {
-    tag: "div",
-    attributes: [["class", "select1"]],
-    children: [
-      {
-        tag: "img",
-        attributes: [["class", "icon8"], ["alt", ""], ["src", iconSrc]]
-      },
-      {
-        tag: "div",
-        attributes: [["class", arrowSrc ? "option" : "placeholder4"]],
-        children: [text]
-      },
-      ...(arrowSrc ? [{
-        tag: "img",
-        attributes: [["class", "icon8"], ["alt", ""], ["src", arrowSrc]]
-      }] : [])
-    ]
-  };
-}
-
-function createFilteredEventCard(imageSrc, date, time, type, title, location, price) {
-  return {
-    tag: "div",
-    attributes: [["class", "event-listing-card-v15"]],
-    children: [
-      {
-        tag: "img",
-        attributes: [["class", "image-icon5"], ["alt", ""], ["src", imageSrc]]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "body"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "metatitle4"]],
+            attributes: [["class", "w-6 h-10 border-2 border-white rounded-full flex justify-center"]],
             children: [
               {
                 tag: "div",
-                attributes: [["class", "meta"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "date"]],
-                    children: [
-                      {
-                        tag: "img",
-                        attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/calendar.svg"]]
-                      },
-                      {
-                        tag: "div",
-                        attributes: [["class", "time"]],
-                        children: [date]
-                      }
-                    ]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [time]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: ["·"]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [type]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "title1"]],
-                children: [title]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "date"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/map-pin.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [location]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "price-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "price4"]],
-                children: [price]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "dark-button"]],
-                children: [
-                  {
-                    tag: "div",
-                    attributes: [["class", "label2"]],
-                    children: ["Réserver"]
-                  }
-                ]
+                attributes: [["class", "w-1 h-3 bg-white rounded-full mt-2 animate-pulse"]],
+                children: []
               }
             ]
           }
@@ -1092,63 +204,70 @@ function createFilteredEventCard(imageSrc, date, time, type, title, location, pr
   };
 }
 
-function createSportsSection() {
+function createStatItem(number, label) {
   return {
     tag: "div",
-    attributes: [["class", "popular-near-events"]],
+    attributes: [["class", "text-center"]],
     children: [
       {
         tag: "div",
-        attributes: [["class", "header"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "heading4"]],
-            children: ["Sports"]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "view-all-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "label"]],
-                children: ["Tout voir"]
-              },
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
-            ]
-          }
-        ]
+        attributes: [["class", "text-2xl md:text-3xl font-bold"]],
+        children: [number]
       },
       {
         tag: "div",
-        attributes: [["class", "listings3"]],
+        attributes: [["class", "text-blue-200 text-sm"]],
+        children: [label]
+      }
+    ]
+  };
+}
+
+// Section des fonctionnalités clés
+function createFeaturesSection() {
+  return {
+    tag: "section",
+    attributes: [["class", "py-20 bg-white relative"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"]],
         children: [
-          createSportCard("images/event_3.jpg", "Jul 8", "10:30", "New York", "Championnat de football : la bataille pour la coupe"),
-          createSportCard("images/event_1.jpg", "Jun 29", "13:45", "Berlin", "Evenement de sport : j'ai plus d'idée là"),
-          createSportCard("images/event_4.jpg", "May 17", "12:00", "Marseille", "Evenement de sport : j'ai plus d'idée là"),
-          createSportCard("images/event_2.jpg", "Aug 23", "18:00", "Tours", "Evenement de sport : j'ai plus d'idée là"),
           {
             tag: "div",
-            attributes: [["class", "secondary-button4"]],
+            attributes: [["class", "text-center mb-16"]],
             children: [
               {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Icon.svg"]]
+                tag: "h2",
+                attributes: [["class", "text-4xl md:text-5xl font-bold text-gray-900 mb-6"]],
+                children: ["Pourquoi choisir Konect ?"]
+              },
+              {
+                tag: "p",
+                attributes: [["class", "text-xl text-gray-600 max-w-3xl mx-auto"]],
+                children: ["Une plateforme complète pour découvrir, organiser et participer aux meilleurs événements de votre région."]
               }
             ]
           },
           {
             tag: "div",
-            attributes: [["class", "secondary-button5"]],
+            attributes: [["class", "grid grid-cols-1 md:grid-cols-3 gap-8"]],
             children: [
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
+              createFeatureCard(
+                "Découverte Intelligente",
+                "Algorithme IA qui recommande des événements personnalisés selon vos goûts et votre localisation.",
+                "from-blue-500 to-cyan-400"
+              ),
+              createFeatureCard(
+                "Réservation Instantanée",
+                "Réservez vos places en quelques clics avec paiement sécurisé et billets électroniques.",
+                "from-purple-500 to-pink-400"
+              ),
+              createFeatureCard(
+                "Communauté Active",
+                "Connectez-vous avec d'autres passionnés et créez des liens durables autour de vos centres d'intérêt.",
+                "from-orange-500 to-red-400"
+              )
             ]
           }
         ]
@@ -1157,229 +276,29 @@ function createSportsSection() {
   };
 }
 
-function createSportCard(imageSrc, date, time, location, title) {
+function createFeatureCard(title, description, gradient) {
   return {
     tag: "div",
-    attributes: [["class", "event-listing-card-v3"]],
-    children: [
-      {
-        tag: "img",
-        attributes: [["class", "image-icon11"], ["alt", ""], ["src", imageSrc]]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "meta-title"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "meta10"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "date"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/calendar.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [date]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [time]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "date"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/map-pin.svg"]]
-                  },
-                  {
-                    tag: "div",
-                    attributes: [["class", "time"]],
-                    children: [location]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "title1"]],
-            children: [title]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createMusicDanceSection() {
-  return {
-    tag: "div",
-    attributes: [["class", "popular-near-events"]],
+    attributes: [["class", "group relative bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100"]],
     children: [
       {
         tag: "div",
-        attributes: [["class", "header"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "heading4"]],
-            children: ["Music & Dance"]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "view-all-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "label"]],
-                children: ["Tout voir"]
-              },
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "listings3"]],
-        children: [
-          createSportCard("images/proxi_3.jpg", "Dec 19", "11:30", "Los Angeles", "Spectacle de ballet"),
-          createSportCard("images/soiree_music.jpg", "Nov 21", "14:00", "Paris", "Soirée musique classique"),
-          createSportCard("images/chanteur_xxx.jpg", "Nov 15", "20:00", "San Francisco", "Chanteurs Xxxx"),
-          createSportCard("images/duel_danse.jpg", "Oct 17", "18:30", "Tokyo", "Duel de danse urbaine"),
-          {
-            tag: "div",
-            attributes: [["class", "secondary-button4"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "secondary-button5"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function createFeaturedSection() {
-  return {
-    tag: "div",
-    attributes: [["class", "popular-near-events"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "divider1"]],
+        attributes: [["class", `absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 rounded-3xl transition-opacity duration-500`]],
         children: []
       },
       {
         tag: "div",
-        attributes: [["class", "header"]],
+        attributes: [["class", "relative z-10"]],
         children: [
           {
-            tag: "div",
-            attributes: [["class", "heading4"]],
-            children: ["À la une"]
+            tag: "h3",
+            attributes: [["class", "text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors"]],
+            children: [title]
           },
           {
-            tag: "div",
-            attributes: [["class", "view-all-button"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "label"]],
-                children: ["Tout voir"]
-              },
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "cards"]],
-        children: [
-          createBlogCard("images/uno1.jpg", "Concert", "Outils pour vendre des billets en ligne et gérer vos concerts", "Créez et gérez facilement vos concerts sur notre plateforme pour offrir des expériences inoubliables à…", "10"),
-          createBlogCard("images/uno2.jpg", "Planing", "Idées d'événements pour célébrer la culture, et les communautés", "S'impliquer auprès de votre communauté et célébrer la culture ensemble est aussi une stratégie intelligente pour votre entreprise...", "15"),
-          createBlogCard("images/uno1.jpg", "Hobbies", "20 idées d'activités créatives pour événements afin de favoriser un changement positif", "Le type d'événement que vous choisissez dépend de vos objectifs. Pour vous inspirer à franchir la prochaine étape, il...", "8")
-        ]
-      }
-    ]
-  };
-}
-
-function createBlogCard(imageSrc, category, title, excerpt, duration) {
-  return {
-    tag: "div",
-    attributes: [["class", "blog-card-v8"]],
-    children: [
-      {
-        tag: "div",
-        attributes: [["class", "image"]],
-        children: [
-          {
-            tag: "img",
-            attributes: [["class", "image-icon19"], ["alt", ""], ["src", imageSrc]]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "category10"]],
-            children: [category]
-          }
-        ]
-      },
-      {
-        tag: "div",
-        attributes: [["class", "body18"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "text21"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "title19"]],
-                children: [title]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "excerpt"]],
-                children: [excerpt]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "length"]],
-            children: [`Lecture : ${duration} minutes`]
+            tag: "p",
+            attributes: [["class", "text-gray-600 leading-relaxed"]],
+            children: [description]
           }
         ]
       }
@@ -1387,140 +306,144 @@ function createBlogCard(imageSrc, category, title, excerpt, duration) {
   };
 }
 
-function createBannerSection() {
+// Section des catégories d'événements
+function createCategoriesSection() {
   return {
-    tag: "div",
-    attributes: [["class", "banner"]],
+    tag: "section",
+    attributes: [["class", "py-20 bg-gradient-to-br from-gray-50 to-blue-50"], ["id", "categories"]],
     children: [
       {
         tag: "div",
-        attributes: [["class", "image3"]],
+        attributes: [["class", "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"]],
         children: [
           {
-            tag: "img",
-            attributes: [["class", "phone-icon"], ["alt", ""], ["src", "images/phone.svg"]]
-          },
-          {
             tag: "div",
-            attributes: [["class", "secondary-button8"]],
+            attributes: [["class", "text-center mb-16"]],
             children: [
               {
-                tag: "img",
-                attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "secondary-button9"]],
-            children: [
-              {
-                tag: "img",
-                attributes: [["class", "calendar-icon"], ["alt", ""], ["src", "images/Icon.svg"]]
-              }
-            ]
-          },
-          {
-            tag: "img",
-            attributes: [["class", "image-icon22"], ["alt", ""], ["src", "images/reduc.png"]]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "search"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "border"]],
-                children: []
+                tag: "h2",
+                attributes: [["class", "text-4xl md:text-5xl font-bold text-gray-900 mb-6"]],
+                children: ["Explorez par catégorie"]
               },
               {
-                tag: "div",
-                attributes: [["class", "rechercher"]],
-                children: ["Rechercher..."]
-              },
-              {
-                tag: "img",
-                attributes: [["class", "icon22"], ["alt", ""], ["src", "images/icon.svg"]]
+                tag: "p",
+                attributes: [["class", "text-xl text-gray-600 max-w-2xl mx-auto"]],
+                children: ["Trouvez exactement ce que vous cherchez parmi notre large sélection d'événements."]
               }
             ]
           },
           {
             tag: "div",
-            attributes: [["class", "logo"]],
+            attributes: [["class", "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"]],
             children: [
-              {
-                tag: "img",
-                attributes: [["class", "icon23"], ["alt", ""], ["src", "images/icon.svg"]]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "konect"]],
-                children: ["Qonect"]
-              }
-            ]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "primary-button2"]],
-            children: [
-              {
-                tag: "div",
-                attributes: [["class", "label"]],
-                children: ["Reserver"]
-              }
+              createCategoryCard("🎵", "Musique", "music", "from-pink-500 to-red-500"),
+              createCategoryCard("🎭", "Culture", "culture", "from-purple-500 to-indigo-500"),
+              createCategoryCard("⚽", "Sport", "sport", "from-green-500 to-teal-500"),
+              createCategoryCard("🎨", "Art", "art", "from-yellow-500 to-orange-500"),
+              createCategoryCard("🍕", "Food", "food", "from-red-500 to-pink-500"),
+              createCategoryCard("🎓", "Éducation", "education", "from-blue-500 to-cyan-500")
             ]
           }
         ]
+      }
+    ]
+  };
+}
+
+function createCategoryCard(icon, title, category, gradient) {
+  return {
+    tag: "div",
+    attributes: [
+      ["class", "group cursor-pointer bg-white rounded-3xl p-6 text-center transition-all duration-500 hover:shadow-2xl hover:-translate-y-3 border border-gray-100"],
+      ["onclick", `filterByCategory('${category}');scrollToEvents();`]
+    ],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", `w-16 h-16 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center text-3xl mb-4 mx-auto group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`]],
+        children: [icon]
+      },
+      {
+        tag: "h3",
+        attributes: [["class", "font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-lg"]],
+        children: [title]
       },
       {
         tag: "div",
-        attributes: [["class", "text24"]],
+        attributes: [["class", "w-0 group-hover:w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-3 transition-all duration-300 rounded-full"]],
+        children: []
+      }
+    ]
+  };
+}
+
+// Section showcase des événements
+function createEventsShowcase() {
+  return {
+    tag: "section",
+    attributes: [["class", "py-20 bg-white"], ["id", "events"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"]],
         children: [
           {
             tag: "div",
-            attributes: [["class", "text25"]],
+            attributes: [["class", "text-center mb-16"]],
             children: [
               {
-                tag: "div",
-                attributes: [["class", "heading7"]],
-                children: ["Téléchargez notre application !"]
+                tag: "h2",
+                attributes: [["class", "text-4xl md:text-5xl font-bold text-gray-900 mb-6"]],
+                children: ["Événements populaires"]
               },
               {
-                tag: "div",
-                attributes: [["class", "excerpt"]],
-                children: ["Trouvez l'événement parfait près de chez vous, réservez vos billets ou votre place pour des expériences passionnantes — tout cela en un seul endroit avec l'application Finder. Découvrez des événements, sécurisez votre réservation et profitez d'offres exclusives en toute simplicité. Installez l'application dès maintenant et ne ratez plus jamais rien !"]
+                tag: "p",
+                attributes: [["class", "text-xl text-gray-600"]],
+                children: ["Découvrez les événements les plus attendus du moment"]
               }
             ]
           },
           {
             tag: "div",
-            attributes: [["class", "pre-next-buttons"]],
+            attributes: [["class", "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"], ["id", "events-showcase"]],
+            children: [
+              createLoadingPlaceholder(),
+              createLoadingPlaceholder(),
+              createLoadingPlaceholder()
+            ]
+          },
+          {
+            tag: "div",
+            attributes: [["class", "text-center mt-12"]],
             children: [
               {
-                tag: "div",
-                attributes: [["class", "app-store-button"]],
+                tag: "button",
+                attributes: [
+                  ["class", "group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-2xl text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"],
+                  ["onclick", "window.location.hash = 'events'"]
+                ],
                 children: [
                   {
-                    tag: "img",
-                    attributes: [["class", "google-play-icon"], ["alt", ""], ["src", "images/appstore_logo.svg"]]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "app-store-icon"], ["alt", ""], ["src", "images/app_store.svg"]]
-                  }
-                ]
-              },
-              {
-                tag: "div",
-                attributes: [["class", "app-store-button"]],
-                children: [
-                  {
-                    tag: "img",
-                    attributes: [["class", "google-play-icon"], ["alt", ""], ["src", "images/google_play_logo.svg"]]
-                  },
-                  {
-                    tag: "img",
-                    attributes: [["class", "google-play-icon1"], ["alt", ""], ["src", "images/Google play.svg"]]
+                    tag: "span",
+                    attributes: [["class", "flex items-center justify-center"]],
+                    children: [
+                      "Voir tous les événements",
+                      {
+                        tag: "svg",
+                        attributes: [
+                          ["class", "w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"],
+                          ["fill", "currentColor"],
+                          ["viewBox", "0 0 20 20"]
+                        ],
+                        children: [
+                          {
+                            tag: "path",
+                            attributes: [["d", "M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"]],
+                            children: []
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
@@ -1532,50 +455,34 @@ function createBannerSection() {
   };
 }
 
-// === SECTION COMMUNAUTÉS ===
-
-function createCommunitiesSection() {
+function createLoadingPlaceholder() {
   return {
     tag: "div",
-    attributes: [["class", "popular-near-events"]],
+    attributes: [["class", "bg-white rounded-3xl shadow-lg overflow-hidden animate-pulse"]],
     children: [
       {
         tag: "div",
-        attributes: [["class", "header"]],
-        children: [
-          {
-            tag: "div",
-            attributes: [["class", "heading4"]],
-            children: ["🏘️ Découvrez les Communautés"]
-          },
-          {
-            tag: "div",
-            attributes: [["class", "view-all-button"]],
-            children: [
-              BrowserLink({
-                link: "/communities",
-                title: {
-                  tag: "div",
-                  attributes: [["class", "label"]],
-                  children: ["Gérer mes communautés"]
-                }
-              }),
-              {
-                tag: "img",
-                attributes: [["class", "icon"], ["alt", ""], ["src", "images/Arrow.svg"]]
-              }
-            ]
-          }
-        ]
+        attributes: [["class", "h-48 bg-gray-200"]],
+        children: []
       },
       {
         tag: "div",
-        attributes: [["id", "communities-container"], ["style", { minHeight: "200px" }]],
+        attributes: [["class", "p-6"]],
         children: [
           {
             tag: "div",
-            attributes: [["style", { textAlign: "center", padding: "50px", color: "#666" }]],
-            children: ["Chargement des communautés..."]
+            attributes: [["class", "h-4 bg-gray-200 rounded mb-4"]],
+            children: []
+          },
+          {
+            tag: "div",
+            attributes: [["class", "h-3 bg-gray-200 rounded mb-2"]],
+            children: []
+          },
+          {
+            tag: "div",
+            attributes: [["class", "h-3 bg-gray-200 rounded w-2/3"]],
+            children: []
           }
         ]
       }
@@ -1583,208 +490,311 @@ function createCommunitiesSection() {
   };
 }
 
-// Fonction pour charger les communautés
+function createBigStatItem(number, label, icon) {
+  return {
+    tag: "div",
+    attributes: [["class", "text-center group"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "text-4xl mb-4 group-hover:scale-110 transition-transform duration-300"]],
+        children: [icon]
+      },
+      {
+        tag: "div",
+        attributes: [["class", "text-3xl md:text-4xl font-bold mb-2"]],
+        children: [number]
+      },
+      {
+        tag: "div",
+        attributes: [["class", "text-blue-200"]],
+        children: [label]
+      }
+    ]
+  };
+}
+
+// Section CTA (Call to Action)
+function createCtaSection() {
+  return {
+    tag: "section",
+    attributes: [["class", "py-20 bg-gray-900 text-white relative overflow-hidden"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "absolute inset-0"]],
+        children: [
+          {
+            tag: "div",
+            attributes: [["class", "absolute top-20 left-20 w-40 h-40 bg-blue-500 rounded-full opacity-20 blur-3xl"]],
+            children: []
+          },
+          {
+            tag: "div",
+            attributes: [["class", "absolute bottom-20 right-20 w-60 h-60 bg-purple-500 rounded-full opacity-20 blur-3xl"]],
+            children: []
+          }
+        ]
+      },
+      {
+        tag: "div",
+        attributes: [["class", "relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8"]],
+        children: [
+          {
+            tag: "h2",
+            attributes: [["class", "text-4xl md:text-6xl font-bold mb-6"]],
+            children: ["Prêt à vivre l'expérience ?"]
+          },
+          {
+            tag: "p",
+            attributes: [["class", "text-xl md:text-2xl text-gray-300 mb-8 max-w-2xl mx-auto"]],
+            children: ["Rejoignez notre communauté et découvrez des événements qui vous ressemblent."]
+          },
+          {
+            tag: "div",
+            attributes: [["class", "flex flex-col sm:flex-row gap-4 justify-center items-center"]],
+            children: [
+              {
+                tag: "button",
+                attributes: [
+                  ["class", "bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-2xl text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"],
+                  ["onclick", "window.location.hash = 'inscription'"]
+                ],
+                children: ["Commencer maintenant"]
+              },
+              {
+                tag: "button",
+                attributes: [
+                  ["class", "border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold py-4 px-8 rounded-2xl text-lg transition-all duration-300"],
+                  ["onclick", "window.location.hash = 'events'"]
+                ],
+                children: ["Parcourir les événements"]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+// Footer moderne
+function createFooter() {
+  return {
+    tag: "footer",
+    attributes: [["class", "bg-black text-white py-16"]],
+    children: [
+      {
+        tag: "div",
+        attributes: [["class", "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"]],
+        children: [
+          {
+            tag: "div",
+            attributes: [["class", "grid grid-cols-1 md:grid-cols-4 gap-8 mb-8"]],
+            children: [
+              {
+                tag: "div",
+                children: [
+                  {
+                    tag: "div",
+                    attributes: [["class", "flex items-center mb-4"]],
+                    children: [
+                      {
+                        tag: "div",
+                        attributes: [["class", "w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-xl mr-3"]],
+                        children: ["K"]
+                      },
+                      {
+                        tag: "span",
+                        attributes: [["class", "text-2xl font-bold"]],
+                        children: ["Konect"]
+                      }
+                    ]
+                  },
+                  {
+                    tag: "p",
+                    attributes: [["class", "text-gray-400 text-sm leading-relaxed"]],
+                    children: ["Connectez-vous à votre communauté et découvrez des événements exceptionnels près de chez vous."]
+                  }
+                ]
+              },
+              createFooterColumn("Navigation", [
+                { text: "Accueil", link: "#" },
+                { text: "Événements", link: "#events" },
+                { text: "Communautés", link: "#communities" },
+                { text: "À propos", link: "#about" }
+              ]),
+              createFooterColumn("Support", [
+                { text: "Centre d'aide", link: "#help" },
+                { text: "Contact", link: "#contact" },
+                { text: "FAQ", link: "#faq" },
+                { text: "Politique de confidentialité", link: "#privacy" }
+              ]),
+              createFooterColumn("Suivez-nous", [
+                { text: "Facebook", link: "#" },
+                { text: "Twitter", link: "#" },
+                { text: "Instagram", link: "#" },
+                { text: "LinkedIn", link: "#" }
+              ])
+            ]
+          },
+          {
+            tag: "div",
+            attributes: [["class", "border-t border-gray-800 pt-8 text-center text-gray-400 text-sm"]],
+            children: [`© ${new Date().getFullYear()} Konect. Tous droits réservés. Fait avec ❤️ en France.`]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+function createFooterColumn(title, links) {
+  return {
+    tag: "div",
+    children: [
+      {
+        tag: "h3",
+        attributes: [["class", "font-semibold mb-4 text-lg"]],
+        children: [title]
+      },
+      {
+        tag: "ul",
+        attributes: [["class", "space-y-2"]],
+        children: links.map(link => ({
+          tag: "li",
+          children: [
+            {
+              tag: "a",
+              attributes: [
+                ["href", link.link],
+                ["class", "text-gray-400 hover:text-white transition-colors duration-200 text-sm"]
+              ],
+              children: [link.text]
+            }
+          ]
+        }))
+      }
+    ]
+  };
+}
+
+// Fonctions utilitaires
+let allEvents = [];
+let allCommunities = [];
+
+async function loadEvents() {
+  try {
+    const result = await database.getEvents();
+    allEvents = result.data || [];
+    updateEventsShowcase(allEvents.slice(0, 6));
+  } catch (error) {
+    console.error('Erreur lors du chargement des événements:', error);
+  }
+}
+
 async function loadCommunities() {
   try {
-    const { data: communities, error } = await database.getCommunities();
-    
-    if (error) {
-      console.error('Erreur lors du chargement des communautés:', error);
-      return;
-    }
-
-    await displayCommunities(communities || []);
+    const result = await database.getCommunities();
+    allCommunities = result.data || [];
   } catch (error) {
-    console.error('Erreur inattendue:', error);
+    console.error('Erreur lors du chargement des communautés:', error);
   }
 }
 
-// Fonction pour afficher les communautés
-async function displayCommunities(communities) {
-  const container = document.getElementById('communities-container');
-  if (!container) return;
-  
-  if (communities.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 50px; color: #666;">
-        <p>🏘️ Aucune communauté disponible pour le moment.</p>
-        <p><a href="/communities" style="color: #007bff; text-decoration: none;">Créez la première communauté !</a></p>
-      </div>
-    `;
+function updateEventsShowcase(events) {
+  const showcase = document.getElementById('events-showcase');
+  if (!showcase) return;
+
+  if (events.length === 0) {
+    showcase.innerHTML = '<div class="col-span-full text-center text-gray-500 py-12">Aucun événement disponible</div>';
     return;
   }
 
-  // Récupérer l'utilisateur actuel pour vérifier les appartenances
-  const { data: { user } } = await auth.getCurrentUser();
-  
-  // Vérifier les appartenances si l'utilisateur est connecté
-  let userMemberships = [];
-  if (user) {
-    try {
-      const { data: memberships } = await database.getUserMemberships(user.id);
-      userMemberships = memberships?.map(m => m.community_id) || [];
-    } catch (error) {
-      console.error('Erreur lors du chargement des appartenances:', error);
-    }
-  }
-
-  container.innerHTML = `
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; padding: 20px 0;">
-      ${communities.map(community => createCommunityCard(community, user, userMemberships)).join('')}
-    </div>
-  `;
+  const eventsHTML = events.map(event => createEventCardHTML(event)).join('');
+  showcase.innerHTML = eventsHTML;
 }
 
-// Fonction pour créer une carte de communauté
-function createCommunityCard(community, user, userMemberships) {
-  const isUserReferent = user && community.referent_id === user.id;
-  const isUserMember = user && userMemberships.includes(community.id);
-  
-  let actionButton = '';
-  if (!user) {
-    actionButton = `
-      <button onclick="navigateToLogin()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-        Se connecter pour rejoindre
-      </button>
-    `;
-  } else if (isUserReferent) {
-    actionButton = `
-      <button onclick="viewDashboard('${community.id}')" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-        📊 Dashboard
-      </button>
-    `;
-  } else if (isUserMember) {
-    actionButton = `
-      <button onclick="leaveCommunityFromHome('${community.id}')" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-        Quitter
-      </button>
-    `;
-  } else {
-    actionButton = `
-      <button onclick="joinCommunityFromHome('${community.id}')" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-        🤝 Rejoindre
-      </button>
-    `;
-  }
+function createEventCardHTML(event) {
+  const eventDate = new Date(event.date);
+  const day = eventDate.getDate().toString().padStart(2, '0');
+  const month = eventDate.toLocaleDateString('fr-FR', { month: 'short' });
+  const time = eventDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-  const imageHtml = community.image_url 
-    ? `<img src="${community.image_url}" alt="${community.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;" onerror="this.style.display='none'">` 
-    : '';
+  const price = event.price ? `${event.price}€` : 'Gratuit';
+  const category = event.category || 'Événement';
 
   return `
-    <div style="
-      border: 1px solid #ddd; 
-      border-radius: 15px; 
-      padding: 20px; 
-      background: #fff; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative;
-    " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'">
-      
-      ${imageHtml}
-      
-      <div style="margin-bottom: 10px;">
-        <span style="
-          background: #e9ecef; 
-          color: #6c757d; 
-          padding: 4px 8px; 
-          border-radius: 12px; 
-          font-size: 12px; 
-          font-weight: 600;
-          text-transform: uppercase;
-        ">${community.category}</span>
-      </div>
-      
-      <h3 style="margin: 0 0 10px 0; color: #333; font-size: 18px; font-weight: 600;">${community.name}</h3>
-      
-      <p style="margin: 0 0 10px 0; color: #666; font-size: 14px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-        ${community.description}
-      </p>
-      
-      <div style="display: flex; align-items: center; margin-bottom: 15px; color: #888; font-size: 14px;">
-        <span style="margin-right: 4px;">📍</span>
-        <span>${community.location}</span>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
-        <div style="font-size: 12px; color: #999;">
-          Créée le ${new Date(community.created_at).toLocaleDateString('fr-FR')}
+    <div class="group cursor-pointer bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden border border-gray-100" onclick="goToEventDetail('${event.id}')">
+      <div class="relative h-48 overflow-hidden">
+        <img 
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          src="${event.image_url || 'images/event_1.jpg'}"
+          alt="${event.title}"
+          onerror="this.src='images/event_1.jpg'"
+        />
+        <div class="absolute top-4 left-4 bg-white rounded-xl px-3 py-2 shadow-lg">
+          <div class="text-center">
+            <div class="text-xl font-bold text-gray-900">${day}</div>
+            <div class="text-xs text-gray-600 uppercase">${month}</div>
+          </div>
         </div>
-        ${actionButton}
+        <div class="absolute top-4 right-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+          ${category}
+        </div>
+      </div>
+      
+      <div class="p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+          ${event.title}
+        </h3>
+        
+        <div class="flex items-center text-sm text-gray-600 mb-4">
+          <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="truncate">${event.location || 'Lieu à définir'}</span>
+        </div>
+        
+        <div class="flex items-center justify-between">
+          <div class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">${price}</div>
+          <button class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105">
+            Voir détails
+          </button>
+        </div>
       </div>
     </div>
   `;
 }
 
-// Fonction pour rejoindre une communauté depuis la page d'accueil
-async function joinCommunityFromHome(communityId) {
-  try {
-    const { data: { user } } = await auth.getCurrentUser();
-    
-    if (!user) {
-      alert('Vous devez être connecté pour rejoindre une communauté.');
-      return;
-    }
+// Fonctions de navigation
+function goToEventDetail(eventId) {
+  window.location.hash = `event-detail?id=${eventId}`;
+}
 
-    const { error } = await database.joinCommunity(user.id, communityId);
-    
-    if (error) {
-      alert(`Erreur lors de l'adhésion : ${error.message}`);
-    } else {
-      alert('Vous avez rejoint la communauté avec succès ! ');
-      await loadCommunities(); // Recharger les communautés
-    }
-  } catch (error) {
-    alert(`Erreur inattendue : ${error.message}`);
+function filterByCategory(category) {
+  window.location.hash = `events?category=${category}`;
+}
+
+function scrollToEvents() {
+  const eventsSection = document.getElementById('events');
+  if (eventsSection) {
+    eventsSection.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
-// Fonction pour quitter une communauté depuis la page d'accueil
-async function leaveCommunityFromHome(communityId) {
-  if (!confirm('Êtes-vous sûr de vouloir quitter cette communauté ?')) {
-    return;
-  }
-
-  try {
-    const { data: { user } } = await auth.getCurrentUser();
-    
-    if (!user) {
-      alert('Erreur : utilisateur non connecté.');
-      return;
-    }
-
-    const { error } = await database.leaveCommunity(user.id, communityId);
-    
-    if (error) {
-      alert(`Erreur : ${error.message}`);
-    } else {
-      alert('Vous avez quitté la communauté.');
-      await loadCommunities(); // Recharger les communautés
-    }
-  } catch (error) {
-    alert(`Erreur inattendue : ${error.message}`);
+function scrollToCategories() {
+  const categoriesSection = document.getElementById('categories');
+  if (categoriesSection) {
+    categoriesSection.scrollIntoView({ behavior: 'smooth' });
   }
 }
 
-// Fonction pour voir le dashboard d'une communauté
-function viewDashboard(communityId) {
-  window.history.pushState({}, '', `/community-dashboard?id=${communityId}`);
-  const popStateEvent = new PopStateEvent('popstate', { state: {} });
-  window.dispatchEvent(popStateEvent);
-}
-
-// Ces fonctions sont maintenant dans CommonNavbar.js
-
-function navigateToLogin() {
-  window.history.pushState({}, '', '/connexion');
-  const popStateEvent = new PopStateEvent('popstate', { state: {} });
-  window.dispatchEvent(popStateEvent);
-}
-
-// Rendre les fonctions disponibles globalement
-window.navigateToLogin = navigateToLogin;
-window.joinCommunityFromHome = joinCommunityFromHome;
-window.leaveCommunityFromHome = leaveCommunityFromHome;
-window.viewDashboard = viewDashboard;
-window.handleLogout = handleCommonLogout;
+// Exports globaux
+window.loadEvents = loadEvents;
+window.loadCommunities = loadCommunities;
+window.goToEventDetail = goToEventDetail;
+window.filterByCategory = filterByCategory;
+window.scrollToEvents = scrollToEvents;
+window.scrollToCategories = scrollToCategories;

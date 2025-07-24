@@ -53,7 +53,7 @@ export default function AccueilPage() {
               {
                 tag: "h3",
                 attributes: [["style", { color: "#28a745", marginBottom: "15px" }]],
-                children: ["📝 Nouveau sur KONECT ?"]
+                children: ["Nouveau sur KONECT ?"]
               },
               {
                 tag: "p",
@@ -138,7 +138,7 @@ export default function AccueilPage() {
                   {
                     tag: "h4",
                     attributes: [["style", { color: "#28a745" }]],
-                    children: ["👥 Communautés"]
+                    children: ["Communautés"]
                   },
                   {
                     tag: "p",
