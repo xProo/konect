@@ -1,0 +1,20 @@
+# Matrice des droits (Validation ✅ ❌)
+
+| **Table**            | **Action** | **supabase_admin** | **authenticated**   | **public** |
+|----------------------|------------|--------------------|---------------------|------------|
+| **communities**      | DELETE     | ✅                 | (referent_id)       | ❌         |
+|                      | UPDATE     | ✅                 | (referent_id)       | ❌         |
+|                      | SELECT     | ✅                 | ❌                  | ✅         |
+|                      | INSERT     | ❌                 | ✅                  | ❌         |
+| **community_members**| DELETE     | ✅                 | ❌                  | ❌         |
+|                      | SELECT     | ❌                 | ❌                  | ✅         |
+| **event_registrations** | SELECT  | ✅                 | ✅                  | ❌         |
+|                      | DELETE     | ❌                 | (user_id)           | ❌         |
+|                      | INSERT     | ❌                 | ✅                  | ❌         |
+|                      | UPDATE     | ❌                 | (user_id)           | ❌         |
+| **events**           | DELETE     | ✅                 | (user_id)           | ❌         |
+|                      | UPDATE     | ✅                 | (user_id)           | ❌         |
+|                      | SELECT     | ✅                 | ❌                  | ✅         |
+|                      | INSERT     | ❌                 | ✅                  | ❌         |
+| **user_profiles**    | UPDATE     | ✅                 | (own)               | ❌         |
+|                      | SELECT     | ✅                 | ✅                  | ❌         |

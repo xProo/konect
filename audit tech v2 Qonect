@@ -1,0 +1,43 @@
+# Rapport d’Audit Technique (C4.10) – Qonect
+
+**Projet :** Qonect  
+**Équipe auditée :** Yoann Mallet, Maréva Dumain, Sohanne Chamen.
+
+---
+
+## Analyse du code
+
+### Choix techniques
+- **Front-end statique :** Le projet fonctionne sans backend classique. Il est servi via un serveur PHP statique (`php -S`), ce qui simplifie le déploiement et la maintenance.  
+- **Mini-framework JS :** Utilisation d’un système de composants maison (`generateStructure`, `BrowserRouter`, `Component.js`) pour la gestion de l’UI. Ce système s’inspire de la logique de React mais sans virtual DOM, garantissant un rendu rapide et simple.  
+- **Tailwind CSS :** Utilisé pour un design moderne, responsive et rapide à mettre en œuvre. Les classes utilitaires permettent de réduire le code CSS custom.  
+- **Supabase :** Utilisé comme BaaS (Backend as a Service) pour la gestion des données (PostgreSQL), l’authentification et le stockage des fichiers.
+
+### Qualité du code
+- **Séparation logique :** Les fichiers sont bien structurés (modules JS pour auth, events, routing).  
+- **Lisibilité :** Les fonctions sont courtes, bien nommées et documentées.  
+- **CSS :** Tailwind réduit les duplications et offre un design harmonieux.
+
+---
+
+## Sécurité
+- Authentification et gestion des rôles via Supabase : **OK**.  
+- Vérification basique des champs (côté front) pour éviter les saisies incorrectes.  
+- **Amélioration possible :** ajouter un filtrage plus strict des inputs pour éviter les injections XSS.
+
+---
+
+## Performances
+- Le mini-framework JS évite les lourdeurs des frameworks classiques.  
+- Les appels Supabase sont directs et optimisés.  
+- **Possibilité d’amélioration :** ajouter un cache local (localStorage) pour améliorer la vitesse des pages.
+
+---
+
+## Axes d’amélioration
+- Ajouter des tests unitaires (Jest) pour vérifier la logique des composants.  
+- Factoriser certains composants pour plus de réutilisabilité.  
+- Ajouter des animations légères pour améliorer l’expérience utilisateur.  
+- Mettre en place une pipeline CI/CD plus robuste pour automatiser les déploiements.
+
+---
