@@ -321,7 +321,7 @@ export async function updateCommonUserDisplay() {
               <span>Espace Admin</span>
             </a>
             
-            <a href="/events" style="
+            <a href="/event-manage" style="
               display: flex;
               align-items: center;
               gap: 12px;
@@ -335,7 +335,7 @@ export async function updateCommonUserDisplay() {
               <span>Mes Événements</span>
             </a>
             
-            <a href="/communities" style="
+            <a href="/community-manage" style="
               display: flex;
               align-items: center;
               gap: 12px;

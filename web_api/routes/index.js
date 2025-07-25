@@ -8,8 +8,10 @@ import AccueilPage from "../views/AccueilPage.js";
 import HomePage from "../views/HomePage.js";
 import CommunityManagePage from "../views/CommunityManagePage.js";
 import CommunityDashboardPage from "../views/CommunityDashboardPage.js";
+import CommunitiesPage from "../views/CommunitiesPage.js";
 import EventsPage from "../views/EventsPage.js";
 import EventDetailPage from "../views/EventDetailPage.js";
+import EventManagePage from "../views/EventManagePage.js";
 import AdminPage from "../views/AdminPage.js";
 import ProfileUser from "../views/ProfileUser.js";
 
@@ -39,6 +41,9 @@ export default {
     tag: Gallery,
   },
   "/communities": {
+    tag: CommunitiesPage,
+  },
+  "/community-manage": {
     tag: CommunityManagePage,
   },
   "/community-dashboard": {
@@ -49,6 +54,9 @@ export default {
   },
   "/event-detail": {
     tag: EventDetailPage,
+  },
+  "/event-manage": {
+    tag: EventManagePage,
   },
   "/admin": {
     tag: AdminPage,

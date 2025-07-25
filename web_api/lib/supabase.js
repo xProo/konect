@@ -355,6 +355,9 @@ export const database = {
       description: eventData.description,
       date: eventData.date,
       location: eventData.location,
+      price: eventData.price || 0,
+      max_participants: eventData.max_participants,
+      created_by: eventData.created_by,
       community_id: eventData.community_id
     };
 
@@ -396,6 +399,16 @@ export const database = {
       .from('events')
       .delete()
       .eq('id', eventId)
+    return { data, error }
+  },
+
+  // Récupérer les événements créés par un utilisateur
+  async getUserCreatedEvents(userId) {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false })
     return { data, error }
   },
 
